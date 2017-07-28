@@ -18,10 +18,8 @@
 #include <cstddef>
 #include <graphblas/Matrix.hpp>
 
-// Include matrix definitions from the appropriate backend.
-#define __GB_SYSTEM_COMPLEMENTVIEW_HEADER <graphblas/system/__GB_SYSTEM_ROOT/ComplementView.hpp>
-#include __GB_SYSTEM_COMPLEMENTVIEW_HEADER
-#undef __GB_SYSTEM_COMPLEMENTVIEW_HEADER
+#define GB_INLCUDE_COMPLEMENT_VIEW 1
+#include <graphblas/backend_include.hpp>
 
 //****************************************************************************
 //****************************************************************************

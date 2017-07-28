@@ -18,10 +18,8 @@
 #include <cstddef>
 #include <graphblas/Matrix.hpp>
 
-#define __GB_SYSTEM_TRANSPOSEVIEW_HEADER <graphblas/system/__GB_SYSTEM_ROOT/TransposeView.hpp>
-#include __GB_SYSTEM_TRANSPOSEVIEW_HEADER
-#undef __GB_SYSTEM_TRANSPOSEVIEW_HEADER
-
+#define GB_INLCUDE_TRANSPOSE_VIEW 1
+#include <graphblas/backend_include.hpp>
 
 //****************************************************************************
 //****************************************************************************

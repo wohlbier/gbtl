@@ -30,18 +30,10 @@
 
 #include <graphblas/detail/config.hpp>
 
-#define __GB_SYSTEM_HEADER <graphblas/system/__GB_SYSTEM_ROOT/TransposeView.hpp>
-#include __GB_SYSTEM_HEADER
-#undef __GB_SYSTEM_HEADER
-
-#define __GB_SYSTEM_HEADER <graphblas/system/__GB_SYSTEM_ROOT/ComplementView.hpp>
-#include __GB_SYSTEM_HEADER
-#undef __GB_SYSTEM_HEADER
-
-#define __GB_SYSTEM_HEADER <graphblas/system/__GB_SYSTEM_ROOT/operations.hpp>
-#include __GB_SYSTEM_HEADER
-
-#undef __GB_SYSTEM_HEADER
+#define GB_INLCUDE_TRANSPOSE_VIEW 1
+#define GB_INLCUDE_COMPLEMENT_VIEW 1
+#define GB_INLCUDE_OPERATIONS 1
+#include <graphblas/backend_include.hpp>
 
 //****************************************************************************
 // New signatures to conform to GraphBLAS Specification
