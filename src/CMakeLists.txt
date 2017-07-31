@@ -21,19 +21,10 @@ set(GRAPHBLAS
         graphblas/system/cusp/utility.hpp
         graphblas/system/cusp/Vector.hpp
         graphblas/system/sequential/BitmapSparseVector.hpp
-        graphblas/system/sequential/ColumnExtendedView.hpp
-        graphblas/system/sequential/CooMatrix.hpp
-        graphblas/system/sequential/CscMatrix.hpp
-        graphblas/system/sequential/CsrMatrix.hpp
-        graphblas/system/sequential/DiaMatrix.hpp
-        graphblas/system/sequential/FunctionView.hpp
-        graphblas/system/sequential/LilMatrix.hpp
+        graphblas/system/sequential/ComplementView.hpp
         graphblas/system/sequential/LilSparseMatrix.hpp
         graphblas/system/sequential/Matrix.hpp
-        graphblas/system/sequential/mxv_sparse.hpp
-        graphblas/system/sequential/NegateView.hpp
         graphblas/system/sequential/operations.hpp
-        graphblas/system/sequential/RowExtendedView.hpp
         graphblas/system/sequential/sequential.hpp
         graphblas/system/sequential/sparse_apply.hpp
         graphblas/system/sequential/sparse_assign.hpp
@@ -48,19 +39,15 @@ set(GRAPHBLAS
         graphblas/system/sequential/types.hpp
         graphblas/system/sequential/utility.hpp
         graphblas/system/sequential/Vector.hpp
-        graphblas/accum.hpp
         graphblas/algebra.hpp
         graphblas/exceptions.hpp
         graphblas/graphblas.cpp
         graphblas/graphblas.hpp
-        graphblas/linalg_utils.hpp
         graphblas/Matrix.hpp
         graphblas/matrix_utils.hpp
         graphblas/operations.hpp
         graphblas/types.hpp
-        graphblas/utility.hpp
-        graphblas/Vector.hpp
-        graphblas/View.hpp)
+        graphblas/Vector.hpp)
 
 
 set(ALGORITHMS
