@@ -21,34 +21,32 @@
 #include <graphblas/system/GB_BACKEND_NAME/GB_BACKEND_NAME.hpp>
 #endif
 
-#if(GB_INLCUDE_MATRIX)
+#if(GB_INCLUDE_BACKEND_MATRIX)
 #include <graphblas/system/GB_BACKEND_NAME/Matrix.hpp>
-#undef GB_INLCUDE_MATRIX
+#undef GB_INCLUDE_BACKEND_MATRIX
 #endif
 
-#if(GB_INLCUDE_VECTOR)
+#if(GB_INCLUDE_BACKEND_VECTOR)
 #include <graphblas/system/GB_BACKEND_NAME/Vector.hpp>
-#undef GB_INLCUDE_VECTOR
+#undef GB_INCLUDE_BACKEND_VECTOR
 #endif
 
-#if(GB_INLCUDE_UTILITY)
+#if(GB_INCLUDE_BACKEND_UTILITY)
 #include <graphblas/system/GB_BACKEND_NAME/utility.hpp>
-#undef GB_INLCUDE_UTILITY
+#undef GB_INCLUDE_BACKEND_UTILITY
 #endif
 
-#if(GB_INLCUDE_TRANSPOSE_VIEW)
+#if(GB_INCLUDE_BACKEND_TRANSPOSE_VIEW)
 #include <graphblas/system/GB_BACKEND_NAME/TransposeView.hpp>
-#undef GB_INLCUDE_TRANSPOSE_VIEW
+#undef GB_INCLUDE_BACKEND_TRANSPOSE_VIEW
 #endif
 
-#if(GB_INLCUDE_COMPLEMENT_VIEW)
+#if(GB_INCLUDE_BACKEND_COMPLEMENT_VIEW)
 #include <graphblas/system/GB_BACKEND_NAME/ComplementView.hpp>
-#undef GB_INLCUDE_COMPLEMENT_VIEW
+#undef GB_INCLUDE_BACKEND_COMPLEMENT_VIEW
 #endif
 
-#if(GB_INLCUDE_OPERATIONS)
+#if(GB_INCLUDE_BACKEND_OPERATIONS)
 #include <graphblas/system/GB_BACKEND_NAME/operations.hpp>
-#undef GB_INLCUDE_OPERATIONS
+#undef GB_INCLUDE_BACKEND_OPERATIONS
 #endif
-
-

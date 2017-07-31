@@ -19,7 +19,7 @@
 #include <graphblas/detail/config.hpp>
 #include <graphblas/detail/param_unpack.hpp>
 
-#define GB_INLCUDE_MATRIX 1
+#define GB_INCLUDE_BACKEND_MATRIX 1
 #include <graphblas/backend_include.hpp>
 
 //****************************************************************************

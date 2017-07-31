@@ -21,7 +21,7 @@
 
 #include <graphblas/graphblas.hpp>
 
-#define GB_INLCUDE_UTILITY 1
+#define GB_INCLUDE_BACKEND_UTILITY 1
 #include <graphblas/backend_include.hpp>
 
 //****************************************************************************

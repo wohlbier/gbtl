@@ -30,9 +30,9 @@
 
 #include <graphblas/detail/config.hpp>
 
-#define GB_INLCUDE_TRANSPOSE_VIEW 1
-#define GB_INLCUDE_COMPLEMENT_VIEW 1
-#define GB_INLCUDE_OPERATIONS 1
+#define GB_INCLUDE_BACKEND_TRANSPOSE_VIEW 1
+#define GB_INCLUDE_BACKEND_COMPLEMENT_VIEW 1
+#define GB_INCLUDE_BACKEND_OPERATIONS 1
 #include <graphblas/backend_include.hpp>
 
 //****************************************************************************

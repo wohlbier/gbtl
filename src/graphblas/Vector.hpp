@@ -18,7 +18,7 @@
 #include <cstddef>
 #include <graphblas/detail/config.hpp>
 
-#define GB_INLCUDE_VECTOR 1
+#define GB_INCLUDE_BACKEND_VECTOR 1
 #include <graphblas/backend_include.hpp>
 
 namespace GraphBLAS
