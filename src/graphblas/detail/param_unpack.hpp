@@ -16,8 +16,8 @@
 //matrix tags should be strictly internal
 #include "matrix_tags.hpp"
 
-#define GB_INLCUDE_MATRIX 1
-#define GB_INLCUDE_VECTOR 1
+#define GB_INCLUDE_BACKEND_MATRIX 1
+#define GB_INCLUDE_BACKEND_VECTOR 1
 #include <graphblas/backend_include.hpp>
 
 //#define __GB_SYSTEM_MATRIX_HEADER <graphblas/system/__GB_SYSTEM_ROOT/Matrix.hpp>
