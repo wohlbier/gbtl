@@ -68,14 +68,16 @@ int main(int argc, char **argv)
 
     //MatType A(NUM_NODES, NUM_NODES);
     MatType E(num_edges, NUM_NODES);
-    MatType Eout(num_edges, NUM_NODES);
 
     E.build(iE, jE, v);
 
     std::cout << "Running algorithm(s)..." << std::endl;
     T count(0);
 
-    algorithms::k_truss(Eout, E, 3);
-    //std::cout << "# triangles = " << count << std::endl;
+    auto Eout = algorithms::k_truss(E, 3);
+    GraphBLAS::print_matrix(std::cout, Eout, "Edges in 3-trusses");
+
+    auto Eout4 = algorithms::k_truss(E, 4);
+    GraphBLAS::print_matrix(std::cout, Eout4, "Edges in 4-trusses");
     return 0;
 }

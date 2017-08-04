@@ -20,7 +20,7 @@ set(CMAKE_CXX_STANDARD 11)
 # First we build a "library" that we include with each test.
 set(GRAPHBLAS_SOURCES graphblas/graphblas.cpp)
 file(GLOB GRAPHBLAS_HEADERS graphblas/*.hpp)
-add_library(GraphBLASLib ${GRAPHBLAS_SOURCES} ${GRAPHBLAS_HEADERS} )
+add_library(GraphBLASLib ${GRAPHBLAS_SOURCES} ${GRAPHBLAS_HEADERS})
 
 # Build tests and demos into a separate bin directory so it doesn't get mixed in
 # with settings and config files. Note the library dependency is not in here.
