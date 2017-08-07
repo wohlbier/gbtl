@@ -12,7 +12,6 @@
  * This Program is distributed under a BSD license.  Please see LICENSE file or
  * permission@sei.cmu.edu for more information.  DM-0002659
  */
-#define GB_USE_CPU_SIMPLE
 
 #include <iostream>
 

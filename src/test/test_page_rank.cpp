@@ -13,8 +13,6 @@
  * permission@sei.cmu.edu for more information.  DM-0002659
  */
 
-#define GB_USE_CPU_SIMPLE
-
 #include <iostream>
 
 #include <graphblas/graphblas.hpp>

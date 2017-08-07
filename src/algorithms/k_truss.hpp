@@ -68,7 +68,7 @@ namespace algorithms
     {
         typedef typename EMatrixT::ScalarType EdgeType;
 
-        GraphBLAS::print_matrix(std::cout, Ein, "incidence");
+        //GraphBLAS::print_matrix(std::cout, Ein, "incidence");
 
         GraphBLAS::IndexType num_vertices(Ein.ncols());
         GraphBLAS::IndexType num_edges(Ein.nrows());
@@ -84,7 +84,7 @@ namespace algorithms
         }
         // use build or assign
         DiagMask.build(I_n, I_n, v_n);
-        GraphBLAS::print_matrix(std::cout, DiagMask, "Diag(N)");
+        //GraphBLAS::print_matrix(std::cout, DiagMask, "Diag(N)");
 
         // 1. Compute the degree of each vertex from the incidence matrix
         // via column-wise reduction (row reduce of transpose).
@@ -101,7 +101,7 @@ namespace algorithms
                        GraphBLAS::NoAccumulate(),
                        GraphBLAS::ArithmeticSemiring<EdgeType>(),
                        GraphBLAS::transpose(Ein), Ein, true);
-        GraphBLAS::print_matrix(std::cout, A, "adjacencies");
+        //GraphBLAS::print_matrix(std::cout, A, "adjacencies");
 
         // 3. Compute the support for each edge:
         // R = E*A
@@ -112,67 +112,66 @@ namespace algorithms
         GraphBLAS::mxm(*R, GraphBLAS::NoMask(), GraphBLAS::NoAccumulate(),
                        GraphBLAS::ArithmeticSemiring<EdgeType>(),
                        *E, A);
-        GraphBLAS::print_matrix(std::cout, *R, "R");
+        //GraphBLAS::print_matrix(std::cout, *R, "R");
 
         GraphBLAS::Vector<EdgeType> OnesN(num_vertices);
         GraphBLAS::assign_constant(OnesN,
                                    GraphBLAS::NoMask(),
                                    GraphBLAS::NoAccumulate(),
                                    static_cast<EdgeType>(1), I_n, true);
-        GraphBLAS::Vector<EdgeType> s(num_edges);
-        GraphBLAS::mxv(s, GraphBLAS::NoMask(), GraphBLAS::NoAccumulate(),
+        auto s = std::make_shared<GraphBLAS::Vector<EdgeType>>(num_edges);
+        GraphBLAS::mxv(*s, GraphBLAS::NoMask(), GraphBLAS::NoAccumulate(),
                        Support2Semiring<EdgeType>(),
                        *R, OnesN, true);
-        GraphBLAS::print_vector(std::cout, s, "edge support");
+        //GraphBLAS::print_vector(std::cout, *s, "edge support");
 
         // 4. Determine edges which lack enough support for k-truss
         // x = find(s < k-2)
         auto x = std::make_shared<GraphBLAS::Vector<bool>>(num_edges);
         GraphBLAS::apply(*x, GraphBLAS::NoMask(), GraphBLAS::NoAccumulate(),
                          SupportTest<EdgeType>(k_size - 2),
-                         s, true);
+                         *s, true);
         GraphBLAS::apply(*x, *x, GraphBLAS::NoAccumulate(),
                          GraphBLAS::Identity<EdgeType>(),
                          *x, true);
-        GraphBLAS::print_vector(std::cout, *x, "edges lacking support");
+        //GraphBLAS::print_vector(std::cout, *x, "edges lacking support");
 
         while (x->nvals() > 0)
         {
-            std::cout << "============= Iteration: |x| = " << x->nvals()
-                      << std::endl;
+            //std::cout << "============= Iteration: |x| = " << x->nvals()
+            //          << std::endl;
 
             // Step 0a: Get the indices of 'falses' in x
             GraphBLAS::IndexArrayType x_indices(x->nvals());
             GraphBLAS::IndexArrayType x_vals(x->nvals());
             x->extractTuples(x_indices.begin(), x_vals.begin());
 
-            std::cout << "x_indices: ";
-            for (auto ix : x_indices) std::cout << " " << ix;
-            std::cout << std::endl;
+            //std::cout << "x_indices: ";
+            //for (auto ix : x_indices) std::cout << " " << ix;
+            //std::cout << std::endl;
 
             // Step 0b: Get the indices of 'trues' in x
             GraphBLAS::Vector<bool> xc(num_edges);
             GraphBLAS::apply(
                 xc, GraphBLAS::NoMask(), GraphBLAS::NoAccumulate(),
                 SupportTest<EdgeType, std::greater_equal<EdgeType>>(k_size - 2),
-                s, true);
+                *s, true);
             // masked no-op to get rid of stored falses.
             GraphBLAS::apply(xc, xc, GraphBLAS::NoAccumulate(),
                              GraphBLAS::Identity<EdgeType>(),
                              xc, true);
-            GraphBLAS::print_vector(std::cout, xc, "complement(x)");
+            //GraphBLAS::print_vector(std::cout, xc, "complement(x)");
 
             GraphBLAS::IndexArrayType xc_indices(xc.nvals());
             std::vector<bool>         xc_vals(xc.nvals());
             xc.extractTuples(xc_indices.begin(), xc_vals.begin());
 
-            std::cout << "xc_indices: ";
-            for (auto ix : xc_indices) std::cout << " " << ix;
-            std::cout << std::endl;
+            //std::cout << "xc_indices: ";
+            //for (auto ix : xc_indices) std::cout << " " << ix;
+            //std::cout << std::endl;
 
             // Step 1: extract the edges that lack support
             // Ex = E(x,:)
-            GraphBLAS::IndexType nedges(xc_indices.size());
             GraphBLAS::Matrix<EdgeType> Ex(x_indices.size(), num_vertices);
             GraphBLAS::extract(Ex,
                                GraphBLAS::NoMask(),
@@ -181,10 +180,12 @@ namespace algorithms
                                x_indices,
                                GraphBLAS::GrB_ALL,
                                true);
-            GraphBLAS::print_matrix(std::cout, Ex, "Ex");
+            //GraphBLAS::print_matrix(std::cout, Ex, "Ex");
 
+            // Step 1b: extract the edges that are left
             // E := E(xc,:)
-            auto Enew = std::make_shared<EMatrixT>(nedges, num_vertices);
+            num_edges = xc_indices.size();
+            auto Enew = std::make_shared<EMatrixT>(num_edges, num_vertices);
             GraphBLAS::extract(*Enew,
                                GraphBLAS::NoMask(),
                                GraphBLAS::NoAccumulate(),
@@ -192,11 +193,15 @@ namespace algorithms
                                xc_indices,
                                GraphBLAS::GrB_ALL,
                                true);
-            GraphBLAS::print_matrix(std::cout, *Enew, "Enew");
+            //GraphBLAS::print_matrix(std::cout, *Enew, "Enew");
             E = Enew;
+            if (num_edges == 0)
+            {
+                break;
+            }
 
             // R := R(xc,:)
-            auto Rnew = std::make_shared<EMatrixT>(nedges, num_vertices);
+            auto Rnew = std::make_shared<EMatrixT>(num_edges, num_vertices);
             GraphBLAS::extract(*Rnew,
                                GraphBLAS::NoMask(),
                                GraphBLAS::NoAccumulate(),
@@ -204,7 +209,7 @@ namespace algorithms
                                xc_indices,
                                GraphBLAS::GrB_ALL,
                                true);
-            GraphBLAS::print_matrix(std::cout, *Rnew, "Rnew");
+            //GraphBLAS::print_matrix(std::cout, *Rnew, "Rnew");
             R = Rnew;
 
             // R := R - E[Ex'*Ex - diag(dx)]
@@ -217,7 +222,7 @@ namespace algorithms
                            GraphBLAS::NoAccumulate(),
                            GraphBLAS::ArithmeticSemiring<EdgeType>(),
                            GraphBLAS::transpose(Ex), Ex, true);
-            GraphBLAS::print_matrix(std::cout, ExT_Ex, "Ex'*Ex - diag");
+            //GraphBLAS::print_matrix(std::cout, ExT_Ex, "Ex'*Ex - diag");
 
             // R -= E(Ex'*Ex)
             GraphBLAS::mxm(*R,
@@ -225,26 +230,25 @@ namespace algorithms
                            GraphBLAS::Minus<EdgeType>(),
                            GraphBLAS::ArithmeticSemiring<EdgeType>(),
                            *Enew, ExT_Ex, true);
-            GraphBLAS::print_matrix(std::cout, *R, "R -= E*[Ex'*Ex - diag]");
+            //GraphBLAS::print_matrix(std::cout, *R, "R -= E*[Ex'*Ex - diag]");
 
-            XXX; // make s a shared_ptr too
-            GraphBLAS::Vector<EdgeType> s(nedges);
-            GraphBLAS::mxv(s, GraphBLAS::NoMask(), GraphBLAS::NoAccumulate(),
+            s = std::make_shared<GraphBLAS::Vector<EdgeType>>(num_edges);
+            GraphBLAS::mxv(*s, GraphBLAS::NoMask(), GraphBLAS::NoAccumulate(),
                            Support2Semiring<EdgeType>(),
                            *Rnew, OnesN, true);
-            GraphBLAS::print_vector(std::cout, s, "support");
+            //GraphBLAS::print_vector(std::cout, *s, "support");
 
             // 4. Determine edges which lack enough support for k-truss
-            x = std::make_shared<GraphBLAS::Vector<bool>>(nedges);
+            x = std::make_shared<GraphBLAS::Vector<bool>>(num_edges);
             GraphBLAS::apply(*x,
                              GraphBLAS::NoMask(), GraphBLAS::NoAccumulate(),
                              SupportTest<EdgeType>(k_size - 2),
-                             s, true);
-            GraphBLAS::print_vector(std::cout, *x, "new x");
+                             *s, true);
+            //GraphBLAS::print_vector(std::cout, *x, "new x");
             GraphBLAS::apply(*x, *x, GraphBLAS::NoAccumulate(),
                              GraphBLAS::Identity<EdgeType>(),
                              *x, true);
-            GraphBLAS::print_vector(std::cout, *x, "new x (masked noop)");
+            //GraphBLAS::print_vector(std::cout, *x, "new x (masked noop)");
         }
 
         // return incidence matrix containing all edges in k-trusses
