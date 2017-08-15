@@ -433,6 +433,20 @@ namespace GraphBLAS
                                            bool                  replace_flag);
 
         //--------------------------------------------------------------------
+        template<typename WScalarT,
+                 typename MaskT,
+                 typename AccumT,
+                 typename UnaryFunctionT,
+                 typename UVectorT,
+                 typename ...WTagsT>
+        friend inline void apply(GraphBLAS::Vector<WScalarT, WTagsT...> &w,
+                                 MaskT                            const &mask,
+                                 AccumT                                  accum,
+                                 UnaryFunctionT                          op,
+                                 UVectorT                         const &u,
+                                 bool                                    replace_flag);
+
+        //--------------------------------------------------------------------
 
         template<typename WVectorT,
                  typename MaskT,
