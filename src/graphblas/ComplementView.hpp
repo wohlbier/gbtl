@@ -59,10 +59,7 @@ namespace GraphBLAS
         template <typename OtherMatrixT>
         bool operator==(OtherMatrixT const &rhs) const
         {
-            ///@todo Not implemented yet
-            //return matrix_equal_helper(*this, rhs);
-            //return (m_mat.operator==(rhs));
-            throw 1;
+            return (m_mat == rhs);
         }
 
         template <typename OtherMatrixT>
@@ -77,7 +74,7 @@ namespace GraphBLAS
 
         bool hasElement(IndexType row, IndexType col) const
         {
-            return m_mat.hasElement(row, col);
+            return (m_mat.hasElement(row,col));
         }
 
         ScalarType extractElement(IndexType row, IndexType col) const
