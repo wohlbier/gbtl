@@ -256,6 +256,20 @@ namespace GraphBLAS
         inline D3 operator()(D1 lhs, D2 rhs) { return lhs / rhs; }
     };
 
+    template<typename D1, typename D2 = D1, typename D3 = D1>
+    struct Power
+    {
+        typedef D3 result_type;
+        inline D3 operator()(D1 lhs, D2 rhs) { return std::pow(lhs, rhs); }
+    };
+
+    template<typename D1, typename D2 = D1, typename D3 = D1>
+    struct Xor
+    {
+        typedef D3 result_type;
+        inline D3 operator()(D1 lhs, D2 rhs) { return (lhs ^ rhs); }
+    };
+
 } // namespace GraphBLAS
 
 
