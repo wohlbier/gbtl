@@ -61,10 +61,7 @@ namespace GraphBLAS
         template <typename OtherMatrixT>
         bool operator==(OtherMatrixT const &rhs) const
         {
-            //return (m_mat.operator==(rhs.m_mat));
-            throw 1;
-            ///@todo Not implemented yet
-            //return matrix_equal_helper(*this, rhs);
+            return (m_mat == rhs);
         }
 
         template <typename OtherMatrixT>

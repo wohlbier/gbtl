@@ -245,7 +245,7 @@ BOOST_AUTO_TEST_CASE(new_sssp_gilbert_uint)
     //    GraphBLAS::identity<GraphBLAS::Matrix<unsigned int> >(
     //        NUM_NODES, INF, 0);
     GraphBLAS::IndexArrayType ii = {0, 1, 2, 3, 4, 5, 6};
-    std::vector<unsigned int> vi(ii.size(), 1);
+    std::vector<unsigned int> vi(ii.size(), 0);
     GraphBLAS::Matrix<unsigned int> G_gilbert_res(NUM_NODES, NUM_NODES);
     G_gilbert_res.build(ii.begin(), ii.begin(), vi.begin(), ii.size());
 

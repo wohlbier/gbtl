@@ -109,9 +109,9 @@ namespace GraphBLAS
                      replace_flag);
     }
 
-    //****************************************************************************
+    //************************************************************************
     // eWiseAdd and eWiseMult
-    //****************************************************************************
+    //************************************************************************
     /**
      * @brief Perform an element wise binary operation that can be optimized
      *        for "multiply" semantics (AND short circuit logic).
@@ -200,9 +200,9 @@ namespace GraphBLAS
                           replace_flag);
     }
 
-    //****************************************************************************
+    //************************************************************************
     // Extract
-    //****************************************************************************
+    //************************************************************************
 
     /// Extract: Standard vector variant
 //    template<typename WVectorT,
@@ -286,9 +286,9 @@ namespace GraphBLAS
                          col_index, replace_flag);
     }
 
-    //****************************************************************************
+    //************************************************************************
     // Assign
-    //****************************************************************************
+    //************************************************************************
 //
 //    // Standard Vector Variant
 //    template<typename WVectorT,
@@ -436,7 +436,8 @@ namespace GraphBLAS
                                 IndexArrayType const &indices,
                                 bool                  replace_flag = false)
     {
-        backend::assign_constant(w.m_vec, mask.m_vec, accum, val, indices, replace_flag);
+        backend::assign_constant(w.m_vec, mask.m_vec, accum, val, indices,
+                                 replace_flag);
     };
 
     // 4.3.7.6: assign: Constant Matrix Variant
@@ -475,9 +476,9 @@ namespace GraphBLAS
                                  row_indices, col_indices, replace_flag);
     }
 
-    //****************************************************************************
+    //************************************************************************
     // Apply
-    //****************************************************************************
+    //************************************************************************
 
     // vector variant
     template<typename WScalarT,
@@ -513,9 +514,9 @@ namespace GraphBLAS
         backend::apply(C.m_mat, Mask.m_mat, accum, op, A.m_mat, replace_flag);
     };
 
-    //****************************************************************************
+    //************************************************************************
     // reduce
-    //****************************************************************************
+    //************************************************************************
 
     // matrix to column vector variant (row reduce, use transpose for col reduce)
     template<typename WVectorT,
@@ -564,9 +565,9 @@ namespace GraphBLAS
         backend::reduce_matrix_to_scalar(val, accum, op, A.m_mat);
     }
 
-    //****************************************************************************
+    //************************************************************************
     // Transpose
-    //****************************************************************************
+    //************************************************************************
 
     template<typename CMatrixT,
              typename MaskT,
@@ -576,12 +577,25 @@ namespace GraphBLAS
                           MaskT    const &Mask,
                           AccumT          accum,
                           AMatrixT const &A,
-                          bool            replace_flag = false);
+                          bool            replace_flag = false)
+    {
+        backend::transpose(C.m_mat, Mask.m_mat, accum, A.m_mat, replace_flag);
+    }
 
+    //************************************************************************
+    // Views
+    //************************************************************************
 
-    //****************************************************************************
-    //****************************************************************************
-
+    /**
+     * @brief  "Flip" the rows and columns of a matrix
+     * @param[in]  a  The matrix to transpose
+     *
+     */
+    template<typename MatrixT>
+    inline TransposeView<MatrixT> transpose(MatrixT const &A)
+    {
+        return TransposeView<MatrixT>(backend::transpose(A.m_mat));
+    }
 
     /**
      * @brief  Return a view that complements the structure of a matrix.
@@ -602,17 +616,6 @@ namespace GraphBLAS
     {
         return VectorComplementView<Vector<ScalarT, TagsT...>>(
             backend::vector_complement(mask.m_vec));
-    }
-
-    /**
-     * @brief  "Flip" the rows and columns of a matrix
-     * @param[in]  a  The matrix to transpose
-     *
-     */
-    template<typename MatrixT>
-    inline TransposeView<MatrixT> transpose(MatrixT const &A)
-    {
-        return TransposeView<MatrixT>(backend::transpose(A.m_mat));
     }
 
 } // GraphBLAS

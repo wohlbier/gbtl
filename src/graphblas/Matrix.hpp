@@ -467,6 +467,18 @@ namespace GraphBLAS
 
         //--------------------------------------------------------------------
 
+        template<typename CMatrixT,
+                 typename MaskT,
+                 typename AccumT,
+                 typename AMatrixT>
+        friend inline void transpose(CMatrixT       &C,
+                                     MaskT    const &Mask,
+                                     AccumT          accum,
+                                     AMatrixT const &A,
+                                     bool            replace_flag);
+
+        //--------------------------------------------------------------------
+
         template<typename MatrixT>
         friend inline TransposeView<MatrixT> transpose(MatrixT const &A);
 

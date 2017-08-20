@@ -42,6 +42,7 @@
 #include <graphblas/system/sequential/sparse_assign.hpp>
 #include <graphblas/system/sequential/sparse_apply.hpp>
 #include <graphblas/system/sequential/sparse_reduce.hpp>
+#include <graphblas/system/sequential/sparse_transpose.hpp>
 
 
 namespace GraphBLAS
