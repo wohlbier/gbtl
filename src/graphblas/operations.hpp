@@ -172,6 +172,8 @@ namespace GraphBLAS
                           VVectorT              const &v,
                           bool                         replace_flag = false)
     {
+
+
         check_size_size(w, mask, "eWiseMult(vec): w.size != mask.size");
         check_size_size(w, u, "eWiseMult(vec): w.size != u.size");
         check_size_size(u, v, "eWiseMult(vec): u.size != v.size");
@@ -229,12 +231,27 @@ namespace GraphBLAS
                          VVectorT              const &v,
                          bool                         replace_flag = false)
     {
+
+        GRB_LOG("");
+        GRB_LOG_FN_BEGIN("eWiseAdd: Vector variant - 4.3.5.1");
+
+        GRB_LOG_VERBOSE("w in :" << w.m_vec);
+        GRB_LOG_VERBOSE("mask in :" << mask.m_vec);
+        GRB_LOG_VERBOSE_ACCUM(accum);
+        GRB_LOG_VERBOSE_OP(op);
+        GRB_LOG_VERBOSE("u in :" << u.m_vec);
+        GRB_LOG_VERBOSE("v in :" << v.m_vec);
+        GRB_LOG_VERBOSE_REPLACE(replace_flag);
+
+        // check that size(w) == size(mask) == size(u) == size(v)
         check_size_size(w, mask, "eWiseAdd(vec): w.size != mask.size");
         check_size_size(w, u, "eWiseAdd(vec): w.size != u.size");
         check_size_size(u, v, "eWiseAdd(vec): u.size != v.size");
 
         backend::eWiseAdd(w.m_vec, mask.m_vec, accum, op, u.m_vec, v.m_vec,
                           replace_flag);
+        GRB_LOG_FN_END("eWiseAdd: Vector variant - 4.3.5.1");
+
     }
 
     // 4.3.5.2: Element-wise addition - matrix variant

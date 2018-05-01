@@ -16,11 +16,11 @@
 #include <graphblas/graphblas.hpp>
 
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE sparse_ewiseadd_matrix_suite
+#define BOOST_TEST_MODULE ewiseadd_matrix_suite
 
 #include <boost/test/included/unit_test.hpp>
 
-BOOST_AUTO_TEST_SUITE(sparse_ewiseadd_matrix_suite)
+BOOST_AUTO_TEST_SUITE(ewiseadd_matrix_suite)
 
 //****************************************************************************
 

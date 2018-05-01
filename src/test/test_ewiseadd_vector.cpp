@@ -13,14 +13,16 @@
  * permission@sei.cmu.edu for more information.  DM-0002659
  */
 
+#define GRAPHBLAS_LOGGING_LEVEL 0
+
 #include <graphblas/graphblas.hpp>
 
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE sparse_ewiseadd_vector_suite
+#define BOOST_TEST_MODULE ewiseadd_vector_suite
 
 #include <boost/test/included/unit_test.hpp>
 
-BOOST_AUTO_TEST_SUITE(sparse_ewiseadd_vector_suite)
+BOOST_AUTO_TEST_SUITE(ewiseadd_vector_suite)
 
 //****************************************************************************
 
@@ -49,26 +51,108 @@ namespace
 //****************************************************************************
 BOOST_AUTO_TEST_CASE(test_ewiseadd_vector_bad_dimensions)
 {
+    // size(w) == size(m) == size(u) == size(v)
+
     GraphBLAS::Vector<double> v(v3a_dense, 0.);
     GraphBLAS::Vector<double> u(v4a_dense, 0.);
 
+    GraphBLAS::Vector<double> a(v3a_dense, 0.);
+    GraphBLAS::Vector<double> b(v4a_dense, 0.);
+
     GraphBLAS::Vector<double> result(3);
-
-    // incompatible input dimensions
+    GraphBLAS::Vector<double> result_a(3);
+    GraphBLAS::Vector<double> result_b(4);
+    // w0 m0 u1 v1
     BOOST_CHECK_THROW(
-        (GraphBLAS::eWiseAdd(result,
+            (GraphBLAS::eWiseAdd(result_a,
+                                 a,
+                                 GraphBLAS::NoAccumulate(),
+                                 GraphBLAS::Plus<double>(),
+                                 b,
+                                 b)),
+            GraphBLAS::DimensionException);
+
+    // w0 m1 u0 v0
+    BOOST_CHECK_THROW(
+            (GraphBLAS::eWiseAdd(result_a,
+                                 b,
+                                 GraphBLAS::NoAccumulate(),
+                                 GraphBLAS::Plus<double>(),
+                                 a,
+                                 a)),
+            GraphBLAS::DimensionException);
+
+    // w1 m0 u0 v1
+    BOOST_CHECK_THROW(
+            (GraphBLAS::eWiseAdd(result_b,
+                                 a,
+                                 GraphBLAS::NoAccumulate(),
+                                 GraphBLAS::Plus<double>(),
+                                 a,
+                                 b)),
+            GraphBLAS::DimensionException);
+
+    // w1 m1 u1 v0
+    BOOST_CHECK_THROW(
+            (GraphBLAS::eWiseAdd(result_b,
+                                 b,
+                                 GraphBLAS::NoAccumulate(),
+                                 GraphBLAS::Plus<double>(),
+                                 b,
+                                 a)),
+            GraphBLAS::DimensionException);
+
+    // w1 m0 u1 v1
+    BOOST_CHECK_THROW(
+            (GraphBLAS::eWiseAdd(result_b,
+                                 a,
+                                 GraphBLAS::NoAccumulate(),
+                                 GraphBLAS::Plus<double>(),
+                                 b,
+                                 b)),
+            GraphBLAS::DimensionException);
+
+    // w0 m1 u1 v1
+    BOOST_CHECK_THROW(
+            (GraphBLAS::eWiseAdd(result_a,
+                                 b,
+                                 GraphBLAS::NoAccumulate(),
+                                 GraphBLAS::Plus<double>(),
+                                 b,
+                                 b)),
+            GraphBLAS::DimensionException);
+
+
+
+    // w0 no u1 v0
+    BOOST_CHECK_THROW(
+        (GraphBLAS::eWiseAdd(result_a,
                              GraphBLAS::NoMask(),
                              GraphBLAS::NoAccumulate(),
-                             GraphBLAS::Plus<double>(), v, u)),
+                             GraphBLAS::Plus<double>(),
+                             b,
+                             a)),
         GraphBLAS::DimensionException);
 
-    // incompatible output vector dimensions
+    // w1 no u1 v0
     BOOST_CHECK_THROW(
-        (GraphBLAS::eWiseAdd(result,
-                             GraphBLAS::NoMask(),
-                             GraphBLAS::NoAccumulate(),
-                             GraphBLAS::Plus<double>(), u, u)),
-        GraphBLAS::DimensionException);
+            (GraphBLAS::eWiseAdd(result_b,
+                                 GraphBLAS::NoMask(),
+                                 GraphBLAS::NoAccumulate(),
+                                 GraphBLAS::Plus<double>(),
+                                 b,
+                                 a)),
+            GraphBLAS::DimensionException);
+
+    // w1 no u0 v0
+    BOOST_CHECK_THROW(
+            (GraphBLAS::eWiseAdd(result_b,
+                                 GraphBLAS::NoMask(),
+                                 GraphBLAS::NoAccumulate(),
+                                 GraphBLAS::Plus<double>(),
+                                 a,
+                                 a)),
+            GraphBLAS::DimensionException);
 }
 
 //****************************************************************************
@@ -564,5 +648,57 @@ BOOST_AUTO_TEST_CASE(test_ewiseadd_vector_scmp_masked_reg_stored_zero)
                         GraphBLAS::Plus<double>(), u, v3, false);
     BOOST_CHECK_EQUAL(result, ans3);
 }
+
+
+//****************************************************************************
+// Tests using an Accumulator
+//****************************************************************************
+
+//***************************************************************************
+BOOST_AUTO_TEST_CASE(test_ewiseadd_vector_accum){
+        GraphBLAS::Vector<double> v(v3a_dense, 0.);
+        GraphBLAS::Vector<double> u(twos3_dense, 0.);
+
+        GraphBLAS::Vector<double> result1({1, 1, 1}, 0.);
+        GraphBLAS::Vector<double> ans1({15, 3, 10}, 0.);
+        GraphBLAS::eWiseAdd(result1,
+                            GraphBLAS::NoMask(),
+                            GraphBLAS::Plus<double>(),
+                            GraphBLAS::Plus<double>(), u, v);
+        BOOST_CHECK_EQUAL(result1, ans1);
+
+        GraphBLAS::Vector<double> result2({1, 1, 1}, 0.);
+        GraphBLAS::Vector<double> ans2({-13, -1, -8}, 0.);
+        GraphBLAS::eWiseAdd(result2,
+                            GraphBLAS::NoMask(),
+                            GraphBLAS::Minus<double>(),
+                            GraphBLAS::Plus<double>(), u, v);
+        BOOST_CHECK_EQUAL(result2, ans2);
+    }
+
+BOOST_AUTO_TEST_CASE(test_ewiseadd_vector_accum_mask) {
+        GraphBLAS::Vector<double> v(v3a_dense, 0.);
+        GraphBLAS::Vector<double> u(twos3_dense, 0.);
+
+        std::vector<int> mask3_dense = {1, 0, 0};
+        GraphBLAS::Vector<int> mask(mask3_dense); //, 0);
+
+        GraphBLAS::Vector<double> result1({1, 1, 1}, 0.);
+        GraphBLAS::Vector<double> ans1({15, 1, 1}, 0.);
+        GraphBLAS::eWiseAdd(result1,
+                            mask,
+                            GraphBLAS::Plus<double>(),
+                            GraphBLAS::Plus<double>(), u, v);
+        BOOST_CHECK_EQUAL(result1, ans1);
+
+        GraphBLAS::Vector<double> result2({1, 1, 1}, 0.);
+        GraphBLAS::Vector<double> ans2({-13, 1, 1}, 0.);
+        GraphBLAS::eWiseAdd(result2,
+                            mask,
+                            GraphBLAS::Minus<double>(),
+                            GraphBLAS::Plus<double>(), u, v);
+        BOOST_CHECK_EQUAL(result2, ans2);
+    }
+
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -368,53 +368,45 @@ namespace GraphBLAS
             auto v1_it = vec1.begin();
             auto v2_it = vec2.begin();
 
-            D1 v1_val;
-            D2 v2_val;
-            GraphBLAS::IndexType v1_idx, v2_idx;
-
             // loop through both ordered sets to compute ewise_or
             while ((v1_it != vec1.end()) || (v2_it != vec2.end()))
             {
                 if ((v1_it != vec1.end()) && (v2_it != vec2.end()))
                 {
-                    std::tie(v1_idx, v1_val) = *v1_it;
-                    std::tie(v2_idx, v2_val) = *v2_it;
-
-                    if (v2_idx == v1_idx)
+                    if (std::get<0>(*v2_it) == std::get<0>(*v1_it))
                     {
-                        //std::cerr << ans << " + " << v1_val << " * " << v2_val << " = ";
-                        ans.push_back(std::make_tuple(v1_idx,
-                                                      static_cast<D3>(op(v1_val, v2_val))));
-                        //std::cerr << ans << std::endl;
+                        GRB_LOG_VERBOSE(ans << " + " << std::get<1>(*v1_it) << " * " << std::get<1>(*v2_it) << " = ");
+                        ans.push_back(std::make_tuple(std::get<0>(*v1_it),
+                                                      static_cast<D3>(op(std::get<1>(*v1_it), std::get<1>(*v2_it)))));
+                        GRB_LOG_VERBOSE(ans);
 
                         ++v2_it;
                         ++v1_it;
                     }
-                    else if (v2_idx > v1_idx)
+                    else if (std::get<0>(*v2_it) > std::get<0>(*v1_it))
                     {
-                        //std::cerr << "Copying v1, Advancing v1_it" << std::endl;
-                        ans.push_back(std::make_tuple(v1_idx,
-                                                      static_cast<D3>(v1_val)));
+                        GRB_LOG_VERBOSE("Copying v1, Advancing v1_it");
+
+                        ans.push_back(std::make_tuple(std::get<0>(*v1_it),
+                                                      static_cast<D3>(std::get<1>(*v1_it))));
                         ++v1_it;
                     }
                     else
                     {
-                        //std::cerr << "Copying v2, Advancing v2_it" << std::endl;
-                        ans.push_back(std::make_tuple(v2_idx,
-                                                      static_cast<D3>(v2_val)));
+                        GRB_LOG_VERBOSE("Copying v2, Advancing v2_it");
+                        ans.push_back(std::make_tuple(std::get<0>(*v2_it),
+                                                      static_cast<D3>(std::get<1>(*v2_it))));
                         ++v2_it;
                     }
                 }
                 else if (v1_it != vec1.end())
                 {
-                    std::tie(v1_idx, v1_val) = *v1_it;
-                    ans.push_back(std::make_tuple(v1_idx, static_cast<D3>(v1_val)));
+                    ans.push_back(std::make_tuple(std::get<0>(*v1_it), static_cast<D3>(std::get<1>(*v1_it))));
                     ++v1_it;
                 }
                 else // v2_it != vec2.end())
                 {
-                    std::tie(v2_idx, v2_val) = *v2_it;
-                    ans.push_back(std::make_tuple(v2_idx, static_cast<D3>(v2_val)));
+                    ans.push_back(std::make_tuple(std::get<0>(*v2_it), static_cast<D3>(std::get<1>(*v2_it))));
                     ++v2_it;
                 }
             }

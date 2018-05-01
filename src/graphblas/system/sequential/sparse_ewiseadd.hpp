@@ -58,8 +58,10 @@ namespace GraphBLAS
             VVectorT                                  const &v,
             bool                                             replace_flag = false)
         {
+            // Dimension checks happened in front end
+
             // =================================================================
-            // Do the basic ewise-and work: T = A .* B
+            // Do the basic ewise-or work: t = u .* v
             typedef typename BinaryOpT::result_type D3ScalarType;
             std::vector<std::tuple<IndexType,D3ScalarType> > t_contents;
 
@@ -110,7 +112,7 @@ namespace GraphBLAS
             typedef std::vector<std::tuple<IndexType,CScalarT> > CRowType;
 
             // =================================================================
-            // Do the basic ewise-and work: T = A .* B
+            // Do the basic ewise-or work: T = A .* B
             typedef typename BinaryOpT::result_type D3ScalarType;
             typedef std::vector<std::tuple<IndexType,D3ScalarType> > TRowType;
             LilSparseMatrix<D3ScalarType> T(num_rows, num_cols);

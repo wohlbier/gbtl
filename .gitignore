@@ -16,3 +16,4 @@ dist
 docs
 html
 graphblas_py.egg-info
+src/cmake-build-debug/
