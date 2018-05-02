@@ -198,7 +198,7 @@ namespace GraphBLAS
         }
 
         //********************************************************************
-        template < typename WScalarT, typename AScalarT, typename IteratorT>
+        template <typename WScalarT, typename AScalarT, typename IteratorT>
         void extractColumn(
             std::vector< std::tuple<IndexType, WScalarT> >         &vec_dest,
             LilSparseMatrix<AScalarT>                       const  &A,
@@ -244,7 +244,7 @@ namespace GraphBLAS
 
         //********************************************************************
         // Extract a row of a matrix using TransposeView
-        template < typename WScalarT, typename AMatrixT, typename IteratorT>
+        template <typename WScalarT, typename AMatrixT, typename IteratorT>
         void extractColumn(
             std::vector< std::tuple<IndexType, WScalarT> >  &vec_dest,
             backend::TransposeView<AMatrixT> const          &Atrans,
@@ -261,7 +261,7 @@ namespace GraphBLAS
             auto row(Atrans.getCol(col_index));
 
             // Walk the 'row'
-            /// @todo Perf. can be improved for in order row_indices with "continuation"
+            /// @todo Perf. can be improved for 'in order' row_indices with "continuation"
             IndexType out_row_index = 0;
 
             //for (IndexType idx = 0; idx < row_indices.size(); ++idx)

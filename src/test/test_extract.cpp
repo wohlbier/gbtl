@@ -32,33 +32,40 @@ BOOST_AUTO_TEST_CASE(extract_test_bad_dimensions)
     IndexArrayType i    = {0, 0, 0, 1, 1, 1, 2, 2};
     IndexArrayType j    = {1, 2, 3, 0, 2, 3, 0, 1};
     std::vector<double> v = {1, 2, 3, 4, 6, 7, 8, 9};
-    Matrix<double, DirectedMatrixTag> m1(3, 4);
-    m1.build(i, j, v);
+    Matrix<double, DirectedMatrixTag> A(3, 4);
+    A.build(i, j, v);
 
-    Matrix<double, DirectedMatrixTag> c(2,3);
+    Matrix<double, DirectedMatrixTag> C(2, 3);
 
     IndexArrayType vect_I({0, 2});
     IndexArrayType vect_J({0, 4, 1, 2});
 
-    // nvcc requires that the acccumulator be explicitly specified to compile.
-    BOOST_CHECK_THROW(extract(c, NoMask(), NoAccumulate(), m1, vect_I, vect_J),
+    // Standard matrix version:
+    // 1. nrows(C) != nrows(M)
+
+    // 2. ncols(C) != ncols(M)
+
+    // 3. nrows(C) != |I|
+
+    // 4. ncols(C) != |J|
+    BOOST_CHECK_THROW(extract(C, NoMask(), NoAccumulate(), A, vect_I, vect_J),
                       DimensionException);
 }
 
 //****************************************************************************
 BOOST_AUTO_TEST_CASE(extract_test_no_accum)
 {
-    IndexArrayType i_m1    = {0, 0, 0, 1, 1, 1, 2, 2};
-    IndexArrayType j_m1    = {1, 2, 3, 0, 2, 3, 0, 1};
-    std::vector<double> v_m1 = {1, 2, 3, 4, 6, 7, 8, 9};
-    Matrix<double, DirectedMatrixTag> m1(3, 4);
-    m1.build(i_m1, j_m1, v_m1);
+    IndexArrayType i_A    = {0, 0, 0, 1, 1, 1, 2, 2};
+    IndexArrayType j_A    = {1, 2, 3, 0, 2, 3, 0, 1};
+    std::vector<double> v_A = {1, 2, 3, 4, 6, 7, 8, 9};
+    Matrix<double, DirectedMatrixTag> A(3, 4);
+    A.build(i_A, j_A, v_A);
 
 
     IndexArrayType vect_I({0,2});
     IndexArrayType vect_J({0,1,3});
 
-    Matrix<double, DirectedMatrixTag> c(2,3);
+    Matrix<double, DirectedMatrixTag> C(2,3);
 
     IndexArrayType i_result    = {0, 0, 1, 1};
     IndexArrayType j_result    = {1, 2, 0, 1};
@@ -66,8 +73,7 @@ BOOST_AUTO_TEST_CASE(extract_test_no_accum)
     Matrix<double, DirectedMatrixTag> result(2, 3);
     result.build(i_result, j_result, v_result);
 
-    // nvcc requires that the acccumulator be explicitly specified to compile.
-    extract(c, NoMask(), NoAccumulate(), m1, vect_I, vect_J);
+    extract(C, NoMask(), NoAccumulate(), A, vect_I, vect_J);
 
     BOOST_CHECK_EQUAL(c, result);
 }
@@ -442,9 +448,6 @@ BOOST_AUTO_TEST_CASE(sparse_extract_column_all)
     std::vector<double> vecAnswer = {1,5,9};
     GraphBLAS::Vector<double> answer(vecAnswer, 0);
 
-    // Output space
-    GraphBLAS::IndexType M = 2;
-
     GraphBLAS::Vector<double> result(3);
 
     GraphBLAS::extract(result,
@@ -452,7 +455,6 @@ BOOST_AUTO_TEST_CASE(sparse_extract_column_all)
                        GraphBLAS::NoAccumulate(),
                        mA,
                        GraphBLAS::AllIndices(),
-//                       (IndexType) 1,
                        1,
                        false);
 
