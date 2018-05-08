@@ -43,7 +43,6 @@ namespace GraphBLAS
     namespace backend
     {
         //**********************************************************************
-
         /**
          * Extracts a series of values from the vector based on the passed in
          * indices.
@@ -70,9 +69,12 @@ namespace GraphBLAS
 
             vec_dest.clear();
 
+            GRB_LOG_VERBOSE("vectorExtract: sizeof(vec_src): " << vec_src.size());
+
             IndexType out_idx = 0;
             for (auto col_it = begin; col_it != end; ++col_it, ++out_idx)
             {
+                GRB_LOG_VERBOSE("out_idx = " << out_idx);
                 IndexType wanted_idx = *col_it;
                 IndexType tmp_idx;
                 AScalarT tmp_value;
@@ -91,6 +93,17 @@ namespace GraphBLAS
             }
         }
 
+        // *******************************************************************
+        template<typename CScalarT,
+                 typename AScalarT,
+                 typename SequenceT>
+        void vectorExtract(
+                std::vector<std::tuple<IndexType, CScalarT> >       &vec_dest,
+                std::vector<std::tuple<IndexType, AScalarT> > const &vec_src,
+                SequenceT                                            indices)
+        {
+            vectorExtract(vec_dest, vec_src, indices.begin(), indices.end());
+        }
 
         // *******************************************************************
         template<typename CScalarT,
@@ -312,12 +325,14 @@ namespace GraphBLAS
             typedef typename WVectorT::ScalarType WScalarType;
             typedef std::vector<std::tuple<IndexType,WScalarType> > CColType;
 
+            GRB_LOG_VERBOSE("U inside: " << u);
+
             // =================================================================
             // Extract to T
             typedef typename UVectorT::ScalarType UScalarType;
             std::vector<std::tuple<IndexType, UScalarType> > t;
             auto u_contents(u.getContents());
-            vectorExtract(t, u_contents, indices.begin(), indices.end());
+            vectorExtract(t, u_contents, setupIndices(indices, w.size()));
 
             GRB_LOG_VERBOSE("T: " << t);
 
@@ -406,12 +421,12 @@ namespace GraphBLAS
          * well.
          */
         template<typename WVectorT,
-                 typename MaskT,
+                 typename MaskVectorT,
                  typename AccumT,
                  typename AMatrixT,
                  typename SequenceT>
         void extract(WVectorT                 &w,
-                     MaskT              const &mask,
+                     MaskVectorT        const &mask,
                      AccumT                    accum,
                      AMatrixT           const &A,
                      SequenceT          const &row_indices,
