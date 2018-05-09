@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Carnegie Mellon University.
+ * Copyright (c) 2018 Carnegie Mellon University.
  * All Rights Reserved.
  *
  * THIS SOFTWARE IS PROVIDED "AS IS," WITH NO WARRANTIES WHATSOEVER. CARNEGIE
@@ -332,7 +332,9 @@ namespace GraphBLAS
             typedef typename UVectorT::ScalarType UScalarType;
             std::vector<std::tuple<IndexType, UScalarType> > t;
             auto u_contents(u.getContents());
-            vectorExtract(t, u_contents, setupIndices(indices, w.size()));
+            vectorExtract(t, u_contents,
+                          setupIndices(indices,
+                                       std::min(w.size(), u.size())));
 
             GRB_LOG_VERBOSE("T: " << t);
 
@@ -386,8 +388,10 @@ namespace GraphBLAS
             typedef typename AMatrixT::ScalarType AScalarType;
             LilSparseMatrix<AScalarType> T(C.nrows(), C.ncols());
             matrixExtract(T, A,
-                          setupIndices(row_indices, A.nrows()),
-                          setupIndices(col_indices, A.ncols()));
+                          setupIndices(row_indices,
+                                       std::min(A.nrows(), C.nrows())),
+                          setupIndices(col_indices,
+                                       std::min(A.ncols(), C.ncols())));
 
             GRB_LOG_VERBOSE("T: " << T);
 
@@ -442,7 +446,8 @@ namespace GraphBLAS
             typedef std::vector<std::tuple<IndexType, AScalarType>> TVectorType;
             TVectorType t;
 
-            auto seq = setupIndices(row_indices, w.size());
+            auto seq = setupIndices(row_indices,
+                                    std::min(A.nrows(), w.size()));
             extractColumn(t, A, seq.begin(), seq.end(), col_index);
 
             GRB_LOG_VERBOSE("t: " << t);

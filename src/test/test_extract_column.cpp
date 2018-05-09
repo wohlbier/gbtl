@@ -104,34 +104,6 @@ BOOST_AUTO_TEST_CASE(extract_col_test_bad_dimensions)
 }
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(extract_col_test_allindices_too_small)
-{
-    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
-                                             {0, 5, 7, 9},
-                                             {4, 0, 2, 0}};
-    Matrix<double, DirectedMatrixTag> mA(matA, 0);
-
-    // result is too small when I = AllIndices??
-    {
-        std::vector<double> vecAnswer = {0, 5, 7};
-        Vector<double> answer(vecAnswer, 0);
-
-        // Output rank
-        IndexType M = 3;
-        Vector<double> result(M);
-
-        extract(result,
-                NoMask(),
-                NoAccumulate(),
-                transpose(mA),
-                AllIndices(),
-                (IndexType)1);
-
-        BOOST_CHECK_EQUAL(result, answer);
-    }
-}
-
-//****************************************************************************
 BOOST_AUTO_TEST_CASE(extract_col_test_invalid_index)
 {
     std::vector<std::vector<double>> matA = {{8, 1, 6},
@@ -189,6 +161,53 @@ BOOST_AUTO_TEST_CASE(extract_col_test_index_out_of_bounds)
     }
 }
 
+//****************************************************************************
+BOOST_AUTO_TEST_CASE(extract_col_test_allindices_too_small)
+{
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double, DirectedMatrixTag> mA(matA, 0);
+
+    // result is too small when I = AllIndices will pass
+    {
+        std::vector<double> vecAnswer = {0, 5, 7};
+        Vector<double> answer(vecAnswer, 0);
+
+        // Output rank
+        IndexType M = 3;
+        Vector<double> result(M);
+
+        extract(result,
+                NoMask(),
+                NoAccumulate(),
+                transpose(mA),
+                AllIndices(),
+                (IndexType)1);
+
+        BOOST_CHECK_EQUAL(result, answer);
+    }
+
+    // result is too large when I = AllIndices will pass
+    {
+        std::vector<double> vecAnswer = {0, 5, 7, 9, 0, 0};
+        Vector<double> answer(vecAnswer, 0);
+
+        // Output rank
+        IndexType M = 6;
+        Vector<double> result(M);
+
+        extract(result,
+                NoMask(),
+                NoAccumulate(),
+                transpose(mA),
+                AllIndices(),
+                (IndexType)1);
+
+        BOOST_CHECK_EQUAL(result, answer);
+    }
+}
+
 
 //****************************************************************************
 // extract column passing test cases:
@@ -221,12 +240,8 @@ BOOST_AUTO_TEST_CASE(extract_col_test_nomask_noaccum_notrans)
         IndexType M = 3;
         Vector<double> result(M);
 
-        extract(result,
-                NoMask(),
-                NoAccumulate(),
-                mA,
-                AllIndices(),
-                (IndexType)1);
+        extract(result, NoMask(), NoAccumulate(),
+                mA, AllIndices(), (IndexType)1);
 
         BOOST_CHECK_EQUAL(result, answer);
     }
@@ -242,12 +257,8 @@ BOOST_AUTO_TEST_CASE(extract_col_test_nomask_noaccum_notrans)
         IndexType M = 2;
         Vector<double> result(M);
 
-        extract(result,
-                NoMask(),
-                NoAccumulate(),
-                mA,
-                row_indices,
-                (IndexType)2);
+        extract(result, NoMask(), NoAccumulate(),
+                mA, row_indices, (IndexType)2);
 
         BOOST_CHECK_EQUAL(result, answer);
     }
@@ -263,12 +274,8 @@ BOOST_AUTO_TEST_CASE(extract_col_test_nomask_noaccum_notrans)
         IndexType M = 2;
         Vector<double> result(M);
 
-        extract(result,
-                NoMask(),
-                NoAccumulate(),
-                mA,
-                row_indices,
-                (IndexType)2);
+        extract(result, NoMask(), NoAccumulate(),
+                mA, row_indices, (IndexType)2);
 
         BOOST_CHECK_EQUAL(result, answer);
     }
@@ -284,12 +291,8 @@ BOOST_AUTO_TEST_CASE(extract_col_test_nomask_noaccum_notrans)
         IndexType M = 4;
         Vector<double> result(M);
 
-        extract(result,
-                NoMask(),
-                NoAccumulate(),
-                mA,
-                row_indices,
-                (IndexType)3);
+        extract(result, NoMask(), NoAccumulate(),
+                mA, row_indices, (IndexType)3);
 
         BOOST_CHECK_EQUAL(result, answer);
     }
@@ -305,12 +308,8 @@ BOOST_AUTO_TEST_CASE(extract_col_test_nomask_noaccum_notrans)
         IndexType M = 4;
         Vector<double> result(M);
 
-        extract(result,
-                NoMask(),
-                NoAccumulate(),
-                mA,
-                row_indices,
-                (IndexType)0);
+        extract(result, NoMask(), NoAccumulate(),
+                mA, row_indices, (IndexType)0);
 
         BOOST_CHECK_EQUAL(result, answer);
     }
@@ -333,12 +332,8 @@ BOOST_AUTO_TEST_CASE(extract_col_test_nomask_noaccum_trans)
         IndexType M = 4;
         Vector<double> result(M);
 
-        extract(result,
-                NoMask(),
-                NoAccumulate(),
-                transpose(mA),
-                AllIndices(),
-                (IndexType)1);
+        extract(result, NoMask(), NoAccumulate(),
+                transpose(mA), AllIndices(), (IndexType)1);
 
         BOOST_CHECK_EQUAL(result, answer);
     }
@@ -354,12 +349,8 @@ BOOST_AUTO_TEST_CASE(extract_col_test_nomask_noaccum_trans)
         IndexType M = 3;
         Vector<double> result(M);
 
-        extract(result,
-                NoMask(),
-                NoAccumulate(),
-                transpose(mA),
-                row_indices,
-                (IndexType)2);
+        extract(result, NoMask(), NoAccumulate(),
+                transpose(mA), row_indices, (IndexType)2);
 
         BOOST_CHECK_EQUAL(result, answer);
     }

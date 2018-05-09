@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Carnegie Mellon University and The Trustees of Indiana
+ * Copyright (c) 2018 Carnegie Mellon University and The Trustees of Indiana
  * University.
  * All Rights Reserved.
  *
@@ -13,21 +13,122 @@
  * permission@sei.cmu.edu for more information.  DM-0002659
  */
 
-#define GRAPHBLAS_LOGGING_LEVEL 2
+#define GRAPHBLAS_LOGGING_LEVEL 0
 
 #include <graphblas/graphblas.hpp>
 
 using namespace GraphBLAS;
 
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE extract_suite
+#define BOOST_TEST_MODULE extract_stdmat_suite
 
 #include <boost/test/included/unit_test.hpp>
 
-BOOST_AUTO_TEST_SUITE(extract_suite)
+BOOST_AUTO_TEST_SUITE(extract_stdmat_suite)
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(extract_test_bad_dimensions)
+// extract standard matrix error tests
+//****************************************************************************
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_bad_dimensions)
+{
+    IndexArrayType i      = {0, 0, 0, 1, 1, 1, 2, 2};
+    IndexArrayType j      = {1, 2, 3, 0, 2, 3, 0, 1};
+    std::vector<double> v = {1, 2, 3, 4, 6, 7, 8, 9};
+    Matrix<double, DirectedMatrixTag> A(3, 4);
+    A.build(i, j, v);
+
+    Matrix<double, DirectedMatrixTag> C(2, 3);
+
+
+    // Standard matrix version:
+    // 1. nrows(C) != nrows(M)
+    {
+        // Too many mask rows
+        std::vector<std::vector<bool>> matMask = {{true, false, true},
+                                                  {true, true,  false},
+                                                  {false, true, true}};
+        Matrix<bool, DirectedMatrixTag> M(matMask, false);
+        IndexArrayType vect_I({0, 2});
+        IndexArrayType vect_J({0, 1, 2});
+        BOOST_CHECK_THROW(
+            extract(C, M, NoAccumulate(), A, vect_I, vect_J),
+            DimensionException);
+    }
+
+    {
+        // Too few mask rows
+        std::vector<std::vector<bool>> matMask = {{false, true, true}};
+        Matrix<bool, DirectedMatrixTag> M(matMask, false);
+        IndexArrayType vect_I({0, 2});
+        IndexArrayType vect_J({0, 1, 2});
+        BOOST_CHECK_THROW(
+            extract(C, M, NoAccumulate(), A, vect_I, vect_J),
+            DimensionException);
+    }
+
+    // 2. ncols(C) != ncols(M)
+    {
+        // Too many mask cols
+        std::vector<std::vector<bool>> matMask = {{false, true, false, true},
+                                                  {true, true, false, false}};
+        Matrix<bool, DirectedMatrixTag> M(matMask, false);
+        IndexArrayType vect_I({0, 2});
+        IndexArrayType vect_J({0, 1, 2});
+        BOOST_CHECK_THROW(
+            extract(C, M, NoAccumulate(), A, vect_I, vect_J),
+            DimensionException);
+    }
+
+    {
+        // Too few mask cols
+        std::vector<std::vector<bool>> matMask = {{false, true},
+                                                  {true, true}};
+        Matrix<bool, DirectedMatrixTag> M(matMask, false);
+        IndexArrayType vect_I({0, 2});
+        IndexArrayType vect_J({0, 1, 2});
+        BOOST_CHECK_THROW(
+            extract(C, M, NoAccumulate(), A, vect_I, vect_J),
+            DimensionException);
+    }
+
+
+    // 3. nrows(C) != |I|
+    {
+        IndexArrayType vect_I({0, 2, 1}); // too many rows for C
+        IndexArrayType vect_J({0, 1, 2});
+        BOOST_CHECK_THROW(
+            extract(C, NoMask(), NoAccumulate(), A, vect_I, vect_J),
+            DimensionException);
+    }
+
+    {
+        IndexArrayType vect_I({0}); // too few rows for C
+        IndexArrayType vect_J({0, 1, 2});
+        BOOST_CHECK_THROW(
+            extract(C, NoMask(), NoAccumulate(), A, vect_I, vect_J),
+            DimensionException);
+    }
+
+    // 4. ncols(C) != |J|
+    {
+        IndexArrayType vect_I({0, 2});
+        IndexArrayType vect_J({0, 2, 1, 2}); // too many cols for C
+        BOOST_CHECK_THROW(
+            extract(C, NoMask(), NoAccumulate(), A, vect_I, vect_J),
+            DimensionException);
+    }
+
+    {
+        IndexArrayType vect_I({0, 2});
+        IndexArrayType vect_J({0, 1}); // too many cols for C
+        BOOST_CHECK_THROW(
+            extract(C, NoMask(), NoAccumulate(), A, vect_I, vect_J),
+            DimensionException);
+    }
+}
+
+//****************************************************************************
+BOOST_AUTO_TEST_CASE(extract_stdmat_index_out_of_bounds)
 {
     IndexArrayType i    = {0, 0, 0, 1, 1, 1, 2, 2};
     IndexArrayType j    = {1, 2, 3, 0, 2, 3, 0, 1};
@@ -37,428 +138,1712 @@ BOOST_AUTO_TEST_CASE(extract_test_bad_dimensions)
 
     Matrix<double, DirectedMatrixTag> C(2, 3);
 
-    IndexArrayType vect_I({0, 2});
-    IndexArrayType vect_J({0, 4, 1, 2});
 
     // Standard matrix version:
-    // 1. nrows(C) != nrows(M)
+    // J index out of range
+    {
+        std::vector<std::vector<bool>> matMask = {{true, false, true},
+                                                  {true, true,  false}};
+        Matrix<bool, DirectedMatrixTag> M(matMask, false);
+        IndexArrayType vect_I({0, 2});
+        IndexArrayType vect_J({0, 4, 2});
+        BOOST_CHECK_THROW(
+            extract(C, M, NoAccumulate(), A, vect_I, vect_J),
+            IndexOutOfBoundsException);
 
-    // 2. ncols(C) != ncols(M)
+        BOOST_CHECK_THROW(
+            extract(C, NoMask(), NoAccumulate(), A, vect_I, vect_J),
+            IndexOutOfBoundsException);
+    }
 
-    // 3. nrows(C) != |I|
-
-    // 4. ncols(C) != |J|
-    BOOST_CHECK_THROW(extract(C, NoMask(), NoAccumulate(), A, vect_I, vect_J),
-                      DimensionException);
+    // I index out of range
+    {
+        std::vector<std::vector<bool>> matMask = {{true, false, true},
+                                                  {true, true,  false}};
+        Matrix<bool, DirectedMatrixTag> M(matMask, false);
+        IndexArrayType vect_I({3, 2});
+        IndexArrayType vect_J({0, 1, 2});
+        BOOST_CHECK_THROW(
+            extract(C, M, NoAccumulate(), A, vect_I, vect_J),
+            IndexOutOfBoundsException);
+        BOOST_CHECK_THROW(
+            extract(C, NoMask(), NoAccumulate(), A, vect_I, vect_J),
+            IndexOutOfBoundsException);
+    }
 }
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(extract_test_no_accum)
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_allindices_too_small)
 {
-    IndexArrayType i_A    = {0, 0, 0, 1, 1, 1, 2, 2};
-    IndexArrayType j_A    = {1, 2, 3, 0, 2, 3, 0, 1};
-    std::vector<double> v_A = {1, 2, 3, 4, 6, 7, 8, 9};
-    Matrix<double, DirectedMatrixTag> A(3, 4);
-    A.build(i_A, j_A, v_A);
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double, DirectedMatrixTag> mA(matA, 0);
 
+    // result is too small when I = AllIndices will pass
+    {
+        std::vector<std::vector<double>> matAnswer = {{8, 1, 6},
+                                                      {0, 5, 7}};
+        Matrix<double> answer(matAnswer, 0);
+        Matrix<double> result(2, 3);
 
-    IndexArrayType vect_I({0,2});
-    IndexArrayType vect_J({0,1,3});
+        extract(result, NoMask(), NoAccumulate(),
+                mA, AllIndices(), AllIndices());
 
-    Matrix<double, DirectedMatrixTag> C(2,3);
+        BOOST_CHECK_EQUAL(result, answer);
+    }
 
-    IndexArrayType i_result    = {0, 0, 1, 1};
-    IndexArrayType j_result    = {1, 2, 0, 1};
-    std::vector<double> v_result = {1, 3, 8, 9};
-    Matrix<double, DirectedMatrixTag> result(2, 3);
-    result.build(i_result, j_result, v_result);
+    // result is too big when I = AllIndices will pass
+    {
+        std::vector<std::vector<double>> matAnswer = {{8, 1, 6, 0, 0, 0},
+                                                      {0, 5, 7, 9, 0, 0},
+                                                      {4, 0, 2, 0, 0, 0},
+                                                      {0, 0, 0, 0, 0, 0}};
+        Matrix<double> answer(matAnswer, 0);
+        Matrix<double> result(4, 6);
 
-    extract(C, NoMask(), NoAccumulate(), A, vect_I, vect_J);
+        extract(result, NoMask(), NoAccumulate(),
+                mA, AllIndices(), AllIndices());
 
-    BOOST_CHECK_EQUAL(C, result);
+        BOOST_CHECK_EQUAL(result, answer);
+    }
 }
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(extract_test_accum)
+// Standard matrix passing test cases:
+//
+// Simplified test structure (12 test cases total):
+//
+// Mask cases (x3):  nomask,  noscmp, scmp
+// Accum cases (x2): noaccum, accum
+// Trans cases (x2): notrans, trans
+//
+// Within each test case: 5 checks will be run:
+//
+// row_ind: AllIndices, nodup/ordered, nodup/permute, dup/ordered, dup/permute
+// col_ind: AllIndices, nodup/ordered, nodup/permute, dup/ordered, dup/permute
+//****************************************************************************
+
+//****************************************************************************
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_nomask_noaccum_notrans)
 {
-    IndexArrayType i_A    = {0, 0, 0, 1, 1, 1, 2, 2};
-    IndexArrayType j_A    = {1, 2, 3, 0, 2, 3, 0, 1};
-    std::vector<double> v_A = {1, 2, 3, 4, 6, 7, 8, 9};
-    Matrix<double, DirectedMatrixTag> A(3, 4);
-    A.build(i_A, j_A, v_A);
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double> A(matA, 0);
 
-    IndexArrayType i_C    = {0, 0, 1, 1};
-    IndexArrayType j_C    = {1, 2, 0, 1};
-    std::vector<double> v_C = {1, 3, 8, 9};
-    Matrix<double, DirectedMatrixTag> C(2, 3);
-    C.build(i_C, j_C, v_C);
+    // I,J - AllIndices
+    {
+        Matrix<double> C(3, 4);
+        extract(C, NoMask(), NoAccumulate(), A, AllIndices(), AllIndices());
 
-    IndexArrayType i_result    = {0, 0, 1, 1};
-    IndexArrayType j_result    = {1, 2, 0, 1};
-    std::vector<double> v_result = {2, 6, 16, 18};
-    Matrix<double, DirectedMatrixTag> result(2, 3);
-    result.build(i_result, j_result, v_result);
+        Matrix<double> answer(A);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    IndexArrayType vect_I({0,2});
-    IndexArrayType vect_J({0,1,3});
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,2});
+        IndexArrayType arrayJ({0,1,3});
 
-    //extract(A, vect_I, vect_J, C, math::Accum<double>());
-    extract(C, NoMask(), Plus<double>(), A, vect_I, vect_J);
-    BOOST_CHECK_EQUAL(C, result);
+        Matrix<double> C(2,3);
+        extract(C, NoMask(), NoAccumulate(), A, arrayI, arrayJ);
+
+        std::vector<std::vector<double>> ansMat ={{8, 1, 0},
+                                                  {4, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({2,0});
+        IndexArrayType arrayJ({3,0,1});
+
+        Matrix<double> C(2,3);
+        extract(C, NoMask(), NoAccumulate(), A, arrayI, arrayJ);
+
+        std::vector<std::vector<double>> ansMat ={{0, 4, 0},
+                                                  {0, 8, 1}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,0,2});
+        IndexArrayType arrayJ({0,1,1,3});
+
+        Matrix<double> C(3,4);
+        extract(C, NoMask(), NoAccumulate(), A, arrayI, arrayJ);
+
+        std::vector<std::vector<double>> ansMat ={{8, 1, 1, 0},
+                                                  {8, 1, 1, 0},
+                                                  {4, 0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({2,0,2});
+        IndexArrayType arrayJ({3,0,1,0});
+
+        Matrix<double> C(3,4);
+        extract(C, NoMask(), NoAccumulate(), A, arrayI, arrayJ);
+
+        std::vector<std::vector<double>> ansMat ={{0, 4, 0, 4},
+                                                  {0, 8, 1, 8},
+                                                  {0, 4, 0, 4}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 }
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(sparse_extract_4_3_6_1_base)
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_nomask_noaccum_trans)
 {
-    std::vector<double> vecU = {1,2,3,4,5,6};
-    GraphBLAS::Vector<double> vU(vecU);
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double> A(matA, 0);
 
-    std::vector<double> vecAnswer = {1,3,5};
-    GraphBLAS::Vector<double> answer(vecAnswer);
+    // I,J - AllIndices
+    {
+        Matrix<double> C(4,3);
+        extract(C, NoMask(), NoAccumulate(), transpose(A),
+                AllIndices(), AllIndices());
 
-    // Output space
-    GraphBLAS::IndexType M = 3;
+        std::vector<std::vector<double>> ansMat = {{8, 0, 4},
+                                                   {1, 5, 0},
+                                                   {6, 7, 2},
+                                                   {0, 9, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    IndexArrayType vec_indices = {0, 2, 4};
-    GraphBLAS::IndexArrayType indices(vec_indices);
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,1,3});
+        IndexArrayType arrayJ({0,2});
 
-    GraphBLAS::Vector<double> result(M);
+        Matrix<double> C(3,2);
+        extract(C, NoMask(), NoAccumulate(), transpose(A), arrayI, arrayJ);
 
-    GraphBLAS::extract(result,
-                       GraphBLAS::NoMask(),
-                       GraphBLAS::NoAccumulate(),
-                       vU,
-                       indices);
+        std::vector<std::vector<double>> ansMat ={{8, 4},
+                                                  {1, 0},
+                                                  {0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    BOOST_CHECK_EQUAL(result, answer);
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1});
+        IndexArrayType arrayJ({2,0});
+
+        Matrix<double> C(3,2);
+        extract(C, NoMask(), NoAccumulate(), transpose(A), arrayI, arrayJ);
+
+        std::vector<std::vector<double>> ansMat ={{0, 0},
+                                                  {4, 8},
+                                                  {0, 1}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,1,1,3});
+        IndexArrayType arrayJ({0,0,2});
+
+        Matrix<double> C(4,3);
+        extract(C, NoMask(), NoAccumulate(), transpose(A), arrayI, arrayJ);
+
+        std::vector<std::vector<double>> ansMat ={{8, 8, 4},
+                                                  {1, 1, 0},
+                                                  {1, 1, 0},
+                                                  {0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1,0});
+        IndexArrayType arrayJ({2,0,2});
+
+        Matrix<double> C(4,3);
+        extract(C, NoMask(), NoAccumulate(), transpose(A), arrayI, arrayJ);
+
+        std::vector<std::vector<double>> ansMat ={{0, 0, 0},
+                                                  {4, 8, 4},
+                                                  {0, 1, 0},
+                                                  {4, 8, 4}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 }
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(sparse_extract_4_3_6_1_bounds_check1)
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_nomask_accum_notrans)
 {
-    std::vector<double> vecU = {1,2,3,4,5,6};
-    GraphBLAS::Vector<double> vU(vecU);
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    std::vector<std::vector<double>> matC3x4 = {{9, 9, 9, 9},
+                                                {9, 9, 9, 9},
+                                                {9, 9, 9, 0}};
+    std::vector<std::vector<double>> matC2x3 = {{9, 9, 9},
+                                                {9, 9, 0}};
+    Matrix<double> A(matA, 0);
 
-    std::vector<double> vecAnswer = {1,3,5};
-    GraphBLAS::Vector<double> answer(vecAnswer);
+    // I,J - AllIndices
+    {
+        Matrix<double> C(matC3x4, 0);
+        extract(C, NoMask(), Plus<double>(), A, AllIndices(), AllIndices());
 
-    // Output space
-    GraphBLAS::IndexType M = 3;
+        std::vector<std::vector<double>> ansMat = {{17, 10, 15,  9},
+                                                   { 9, 14, 16, 18},
+                                                   {13,  9, 11,  0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    IndexArrayType vec_indices = {0, 2, 4};
-    GraphBLAS::IndexArrayType indices(vec_indices);
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,2});
+        IndexArrayType arrayJ({0,1,3});
 
-    GraphBLAS::Vector<double> result(M);
+        Matrix<double> C(matC2x3, 0);
+        extract(C, NoMask(), Plus<double>(), A, arrayI, arrayJ);
 
-    // =======
-    // Check w.size != mask.size
-    GraphBLAS::Vector<double> bad_result(M-1);
+        std::vector<std::vector<double>> ansMat ={{17, 10, 9},
+                                                  {13,  9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    std::vector<bool> vecFullMask = {true, true, true};
-    GraphBLAS::Vector<bool> mask(vecFullMask);
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({2,0});
+        IndexArrayType arrayJ({3,0,1});
 
+        Matrix<double> C(matC2x3, 0);
+        extract(C, NoMask(), Plus<double>(), A, arrayI, arrayJ);
 
-    BOOST_CHECK_THROW(
-            (GraphBLAS::extract(bad_result,
-                       mask,
-                       GraphBLAS::NoAccumulate(),
-                       vU,
-                       indices)),
-        DimensionException);
+        std::vector<std::vector<double>> ansMat ={{9, 13,  9},
+                                                  {9, 17,  1}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    // =======
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,0,2});
+        IndexArrayType arrayJ({0,1,1,3});
 
-    // Also check nindices mismatch
-    IndexArrayType bad_vec_indices = {2, 4};
-    GraphBLAS::IndexArrayType bad_indices(bad_vec_indices);
+        Matrix<double> C(matC3x4, 0);
+        extract(C, NoMask(), Plus<double>(), A, arrayI, arrayJ);
 
-    BOOST_CHECK_THROW(
-            (GraphBLAS::extract(result,
-                                GraphBLAS::NoMask(),
-                                GraphBLAS::NoAccumulate(),
-                                vU,
-                                bad_indices)),
-            DimensionException);
-}
+        std::vector<std::vector<double>> ansMat ={{17, 10, 10, 9},
+                                                  {17, 10, 10, 9},
+                                                  {13,  9,  9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({2,0,2});
+        IndexArrayType arrayJ({3,0,1,0});
 
-//****************************************************************************
-BOOST_AUTO_TEST_CASE(sparse_extract_base)
-{
-    std::vector<std::vector<double>> matA = {{8, 1, 6},
-                                             {3, 5, 7},
-                                             {4, 9, 2}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> mA(matA, 0);
+        Matrix<double> C(matC3x4, 0);
+        extract(C, NoMask(), Plus<double>(), A, arrayI, arrayJ);
 
-    std::vector<std::vector<double>> matAnswer = {{1, 6},
-                                                  {9, 2}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> answer(matAnswer, 0);
-
-    // Output space
-    GraphBLAS::IndexType M = 2;
-    GraphBLAS::IndexType N = 2;
-
-    IndexArrayType vec_row_indices = {0, 2};
-    IndexArrayType vec_col_indices = {1, 2};
-    GraphBLAS::IndexArrayType row_indices(vec_row_indices);
-    GraphBLAS::IndexArrayType col_indices(vec_col_indices);
-
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> result(M, N);
-
-    GraphBLAS::extract(result,
-                       GraphBLAS::NoMask(),
-                       GraphBLAS::NoAccumulate(),
-                       mA,
-                       row_indices,
-                       col_indices);
-
-    BOOST_CHECK_EQUAL(result, answer);
-}
-
-//****************************************************************************
-BOOST_AUTO_TEST_CASE(sparse_extract_duplicate)
-{
-    std::vector<std::vector<double>> matA = {{8, 1, 6},
-                                             {3, 5, 7},
-                                             {4, 9, 2}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> mA(matA, 0);
-
-    std::vector<std::vector<double>> matAnswer = {{1, 1, 6},
-                                                  {9, 9, 2},
-                                                  {9, 9, 2}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> answer(matAnswer, 0);
-
-    // Output space
-    GraphBLAS::IndexType M = 3;
-    GraphBLAS::IndexType N = 3;
-
-    GraphBLAS::Matrix<bool, GraphBLAS::DirectedMatrixTag> mask(M, N);
-
-    IndexArrayType vec_row_indices = {0, 2, 2};
-    IndexArrayType vec_col_indices = {1, 1, 2};
-    GraphBLAS::IndexArrayType row_indices(vec_row_indices);
-    GraphBLAS::IndexArrayType col_indices(vec_col_indices);
-
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> result(M, N);
-
-    GraphBLAS::extract(result,
-                       GraphBLAS::NoMask(),
-                       GraphBLAS::NoAccumulate(),
-                       mA,
-                       row_indices,
-                       col_indices);
-
-    BOOST_CHECK_EQUAL(result, answer);
+        std::vector<std::vector<double>> ansMat ={{9, 13,  9, 13},
+                                                  {9, 17, 10, 17},
+                                                  {9, 13,  9, 4}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 }
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(sparse_extract_permute)
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_nomask_accum_trans)
 {
-    std::vector<std::vector<double>> matA = {{8, 1, 6},
-                                             {3, 5, 7},
-                                             {4, 9, 2}};
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    std::vector<std::vector<double>> matC4x3 = {{9, 9, 9},
+                                                {9, 9, 9},
+                                                {9, 9, 9},
+                                                {9, 9, 0}};
+    std::vector<std::vector<double>> matC3x2 = {{9, 9},
+                                                {9, 9},
+                                                {9, 0}};
+    Matrix<double> A(matA, 0);
 
-    std::vector<std::vector<double>> matAnswer = {{9, 2, 4},
-                                                  {1, 6, 8},
-                                                  {5, 7, 3}};
+    // I,J - AllIndices
+    {
+        Matrix<double> C(matC4x3, 0);
+        extract(C, NoMask(), Plus<double>(), transpose(A),
+                AllIndices(), AllIndices());
 
+        std::vector<std::vector<double>> ansMat = {{17,  9, 13},
+                                                   {10, 14,  9},
+                                                   {15, 16, 11},
+                                                   { 9, 18,  0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> mA(matA, 0);
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> answer(matAnswer, 0);
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,1,3});
+        IndexArrayType arrayJ({0,2});
 
-    // Output space
-    GraphBLAS::IndexType M = 3;
-    GraphBLAS::IndexType N = 3;
+        Matrix<double> C(matC3x2, 0);
+        extract(C, NoMask(), Plus<double>(), transpose(A), arrayI, arrayJ);
 
+        std::vector<std::vector<double>> ansMat ={{17, 13},
+                                                  {10,  9},
+                                                  { 9,  0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    IndexArrayType vec_row_indices = {2, 0, 1};
-    IndexArrayType vec_col_indices = {1, 2, 0};
-    GraphBLAS::IndexArrayType row_indices(vec_row_indices);
-    GraphBLAS::IndexArrayType col_indices(vec_col_indices);
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1});
+        IndexArrayType arrayJ({2,0});
 
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> result(M, N);
+        Matrix<double> C(matC3x2, 0);
+        extract(C, NoMask(), Plus<double>(), transpose(A), arrayI, arrayJ);
 
-    GraphBLAS::extract(result,
-                       GraphBLAS::NoMask(),
-                       GraphBLAS::NoAccumulate(),
-                       mA,
-                       row_indices,
-                       col_indices);
+        std::vector<std::vector<double>> ansMat ={{ 9,  9},
+                                                  {13, 17},
+                                                  { 9, 1}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    BOOST_CHECK_EQUAL(result, answer);
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,1,1,3});
+        IndexArrayType arrayJ({0,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, NoMask(), Plus<double>(), transpose(A), arrayI, arrayJ);
+
+        std::vector<std::vector<double>> ansMat ={{17, 17, 13},
+                                                  {10, 10,  9},
+                                                  {10, 10,  9},
+                                                  { 9,  9,  0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1,0});
+        IndexArrayType arrayJ({2,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, NoMask(), Plus<double>(), transpose(A), arrayI, arrayJ);
+
+        std::vector<std::vector<double>> ansMat ={{ 9,  9,  9},
+                                                  {13, 17, 13},
+                                                  { 9, 10,  9},
+                                                  {13, 17,  4}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 }
 
 //****************************************************************************
-
-BOOST_AUTO_TEST_CASE(sparse_extract_mask)
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_noscmp_noaccum_notrans)
 {
-    std::vector<std::vector<double>> matA = {{8, 1, 6},
-                                             {3, 5, 7},
-                                             {4, 9, 2}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> mA(matA, 0);
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double> A(matA, 0);
 
-    std::vector<std::vector<double>> matAnswer = {{1, 0},
-                                                  {9, 2}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> answer(matAnswer, 0);
+    std::vector<std::vector<uint8_t>> matMask2x3 = {{1, 1, 0},    // stored 0
+                                                    {1,99, 0}};
+    std::vector<std::vector<uint8_t>> matMask3x4 = {{1, 1, 1, 0}, // stored 0
+                                                    {1, 1,99, 0},
+                                                    {1,99,99, 0}};
+    Matrix<uint8_t> mask2x3(matMask2x3, 99); // turn 99's into implicit 0's
+    Matrix<uint8_t> mask3x4(matMask3x4, 99);
 
-    IndexArrayType vec_row_indices = {0, 2};
-    IndexArrayType vec_col_indices = {1, 2};
-    GraphBLAS::IndexArrayType row_indices(vec_row_indices);
-    GraphBLAS::IndexArrayType col_indices(vec_col_indices);
+    std::vector<std::vector<double>> matC3x4 = {{9, 9, 9, 9},
+                                                {9, 9, 9, 9},
+                                                {9, 9, 9, 0}};
+    std::vector<std::vector<double>> matC2x3 = {{9, 9, 9},
+                                                {9, 9, 0}};
 
-    // Output space
-    GraphBLAS::IndexType M = 2;
-    GraphBLAS::IndexType N = 2;
+    // I,J - AllIndices
+    {
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, NoAccumulate(), A, AllIndices(), AllIndices(), true);
 
-    std::vector<std::vector<bool>> matMask = {{true, false},
-                                              {true, true}};
+        std::vector<std::vector<double>> ansMat = {{8, 1, 6, 0},
+                                                   {0, 5, 0, 0},
+                                                   {4, 0, 0, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, NoAccumulate(), A, AllIndices(), AllIndices(), false);
 
-    GraphBLAS::Matrix<bool, GraphBLAS::DirectedMatrixTag> mask(matMask, false);
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> result(M, N);
+        std::vector<std::vector<double>> ansMat = {{8, 1, 6, 9},
+                                                   {0, 5, 9, 9},
+                                                   {4, 9, 9, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    GraphBLAS::extract(result,
-                       mask,
-                       GraphBLAS::NoAccumulate(),
-                       mA,
-                       row_indices,
-                       col_indices);
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,2});
+        IndexArrayType arrayJ({0,1,3});
 
-    BOOST_CHECK_EQUAL(result, answer);
+        Matrix<double> C(matC2x3, 0);
+        extract(C, mask2x3, NoAccumulate(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{8, 1, 0},
+                                                  {4, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,2});
+        IndexArrayType arrayJ({0,1,3});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, mask2x3, NoAccumulate(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{8, 1, 9},
+                                                  {4, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({2,0});
+        IndexArrayType arrayJ({3,0,1});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, mask2x3, NoAccumulate(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{0, 4, 0},
+                                                  {0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({2,0});
+        IndexArrayType arrayJ({3,0,1});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, mask2x3, NoAccumulate(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{0, 4, 9},
+                                                  {0, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,0,2});
+        IndexArrayType arrayJ({0,1,1,3});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, NoAccumulate(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{8, 1, 1, 0},
+                                                  {8, 1, 0, 0},
+                                                  {4, 0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,0,2});
+        IndexArrayType arrayJ({0,1,1,3});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, NoAccumulate(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{8, 1, 1, 9},
+                                                  {8, 1, 9, 9},
+                                                  {4, 9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({2,0,2});
+        IndexArrayType arrayJ({3,0,1,0});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, NoAccumulate(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{0, 4, 0, 0},
+                                                  {0, 8, 0, 0},
+                                                  {0, 0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({2,0,2});
+        IndexArrayType arrayJ({3,0,1,0});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, NoAccumulate(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{0, 4, 0, 9},
+                                                  {0, 8, 9, 9},
+                                                  {0, 9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 }
 
 //****************************************************************************
-
-BOOST_AUTO_TEST_CASE(sparse_extract_mask_replace)
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_noscmp_noaccum_trans)
 {
-    std::vector<std::vector<double>> matA = {{8, 1, 6},
-                                             {3, 5, 7},
-                                             {4, 9, 0}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> mA(matA, 0);
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double> A(matA, 0);
+    std::vector<std::vector<uint8_t>> matMask3x2 = {{1, 1},    // stored 0
+                                                    {1,99},    // stored 0
+                                                    {0, 0}};
+    std::vector<std::vector<uint8_t>> matMask4x3 = {{1, 1, 1}, // stored 0
+                                                    {1, 1,99}, // stored 0
+                                                    {1,99,99},
+                                                    {0, 0, 0}};
+    Matrix<uint8_t> mask3x2(matMask3x2, 99); // turn 99's into implicit 0's
+    Matrix<uint8_t> mask4x3(matMask4x3, 99);
 
-    std::vector<std::vector<double>> matAnswer = {{1, 0},
+    std::vector<std::vector<double>> matC4x3 = {{9, 9, 9},
+                                                {9, 9, 9},
+                                                {9, 9, 9},
+                                                {9, 9, 0}};
+    std::vector<std::vector<double>> matC3x2 = {{9, 9},
+                                                {9, 9},
+                                                {9, 0}};
+
+    // I,J - AllIndices
+    {
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, NoAccumulate(), transpose(A),
+                AllIndices(), AllIndices(), true);
+
+        std::vector<std::vector<double>> ansMat = {{8, 0, 4},
+                                                   {1, 5, 0},
+                                                   {6, 0, 0},
+                                                   {0, 0, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, NoAccumulate(), transpose(A),
+                AllIndices(), AllIndices(), false);
+
+        std::vector<std::vector<double>> ansMat = {{8, 0, 4},
+                                                   {1, 5, 9},
+                                                   {6, 9, 9},
+                                                   {9, 9, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,1,3});
+        IndexArrayType arrayJ({0,2});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, mask3x2, NoAccumulate(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{8, 4},
+                                                  {1, 0},
+                                                  {0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,1,3});
+        IndexArrayType arrayJ({0,2});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, mask3x2, NoAccumulate(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{8, 4},
+                                                  {1, 9},
                                                   {9, 0}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> answer(matAnswer, 0);
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    IndexArrayType vec_row_indices = {0, 2};
-    IndexArrayType vec_col_indices = {1, 2};
-    GraphBLAS::IndexArrayType row_indices(vec_row_indices);
-    GraphBLAS::IndexArrayType col_indices(vec_col_indices);
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1});
+        IndexArrayType arrayJ({2,0});
 
-    // Output space
-    GraphBLAS::IndexType M = 2;
-    GraphBLAS::IndexType N = 2;
+        Matrix<double> C(matC3x2, 0);
+        extract(C, mask3x2, NoAccumulate(), transpose(A), arrayI, arrayJ, true);
 
-    std::vector<std::vector<bool>> matMask = {{true, false},
-                                              {true, true}};
+        std::vector<std::vector<double>> ansMat ={{0, 0},
+                                                  {4, 0},
+                                                  {0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({3,0,1});
+        IndexArrayType arrayJ({2,0});
 
-    GraphBLAS::Matrix<bool, GraphBLAS::DirectedMatrixTag> mask(matMask, false);
+        Matrix<double> C(matC3x2, 0);
+        extract(C, mask3x2, NoAccumulate(), transpose(A), arrayI, arrayJ,false);
 
-    // Replace with mask overwrites everything so we shouldn't see any of these.
-    std::vector<std::vector<double>> matResult = {{20, 20},
-                                                  {20, 20}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> result(matResult, 0);
+        std::vector<std::vector<double>> ansMat ={{0, 0},
+                                                  {4, 9},
+                                                  {9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    GraphBLAS::extract(result,
-                       mask,
-                       GraphBLAS::NoAccumulate(),
-                       mA,
-                       row_indices,
-                       col_indices,
-                       true);
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,1,1,3});
+        IndexArrayType arrayJ({0,0,2});
 
-    BOOST_CHECK_EQUAL(result, answer);
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, NoAccumulate(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{8, 8, 4},
+                                                  {1, 1, 0},
+                                                  {1, 0, 0},
+                                                  {0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,1,1,3});
+        IndexArrayType arrayJ({0,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, NoAccumulate(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{8, 8, 4},
+                                                  {1, 1, 9},
+                                                  {1, 9, 9},
+                                                  {9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1,0});
+        IndexArrayType arrayJ({2,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, NoAccumulate(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{0, 0, 0},
+                                                  {4, 8, 0},
+                                                  {0, 0, 0},
+                                                  {0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({3,0,1,0});
+        IndexArrayType arrayJ({2,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, NoAccumulate(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{0, 0, 0},
+                                                  {4, 8, 9},
+                                                  {0, 9, 9},
+                                                  {9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 }
 
 //****************************************************************************
-
-BOOST_AUTO_TEST_CASE(sparse_extract_accum)
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_noscmp_accum_notrans)
 {
-    std::vector<std::vector<double>> matA = {{8, 1, 6},
-                                             {3, 5, 7},
-                                             {4, 9, 2}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> mA(matA, 0);
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double> A(matA, 0);
 
-    std::vector<std::vector<double>> matAnswer = {{21, 26},
-                                                  {29, 22}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> answer(matAnswer, 0);
+    std::vector<std::vector<uint8_t>> matMask2x3 = {{1, 1, 0},    // stored 0
+                                                    {1,99, 0}};
+    std::vector<std::vector<uint8_t>> matMask3x4 = {{1, 1, 1, 0}, // stored 0
+                                                    {1, 1,99, 0},
+                                                    {1,99,99, 0}};
+    Matrix<uint8_t> mask2x3(matMask2x3, 99); // turn 99's into implicit 0's
+    Matrix<uint8_t> mask3x4(matMask3x4, 99);
 
-    // Output space
-    GraphBLAS::IndexType M = 2;
-    GraphBLAS::IndexType N = 2;
+    std::vector<std::vector<double>> matC3x4 = {{9, 9, 9, 9},
+                                                {9, 9, 9, 9},
+                                                {9, 9, 9, 0}};
+    std::vector<std::vector<double>> matC2x3 = {{9, 9, 9},
+                                                {9, 9, 0}};
 
-    IndexArrayType vec_row_indices = {0, 2};
-    IndexArrayType vec_col_indices = {1, 2};
-    GraphBLAS::IndexArrayType row_indices(vec_row_indices);
-    GraphBLAS::IndexArrayType col_indices(vec_col_indices);
+    // I,J - AllIndices
+    {
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, Plus<double>(), A, AllIndices(), AllIndices(), true);
 
-    std::vector<std::vector<double>> matResult = {{20, 20},
-                                                  {20, 20}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> result(matResult, 0);
+        std::vector<std::vector<double>> ansMat = {{17, 10, 15, 0},
+                                                   { 9, 14,  0, 0},
+                                                   {13,  0,  0, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, Plus<double>(), A, AllIndices(), AllIndices(), false);
 
-    GraphBLAS::extract(result,
-                       GraphBLAS::NoMask(),
-                       GraphBLAS::Plus<double>(),
-                       mA,
-                       row_indices,
-                       col_indices);
+        std::vector<std::vector<double>> ansMat = {{17, 10, 15, 9},
+                                                   { 9, 14,  9, 9},
+                                                   {13,  9,  9, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    BOOST_CHECK_EQUAL(result, answer);
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,2});
+        IndexArrayType arrayJ({0,1,3});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, mask2x3, Plus<double>(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{17, 10, 0},
+                                                  {13,  0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,2});
+        IndexArrayType arrayJ({0,1,3});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, mask2x3, Plus<double>(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{17, 10, 9},
+                                                  {13,  9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({2,0});
+        IndexArrayType arrayJ({3,0,1});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, mask2x3, Plus<double>(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{9,13, 0},
+                                                  {9, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({2,0});
+        IndexArrayType arrayJ({3,0,1});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, mask2x3, Plus<double>(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{9,13, 9},
+                                                  {9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,0,2});
+        IndexArrayType arrayJ({0,1,1,3});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, Plus<double>(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{17, 10, 10, 0},
+                                                  {17, 10,  0, 0},
+                                                  {13,  0,  0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,0,2});
+        IndexArrayType arrayJ({0,1,1,3});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, Plus<double>(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{17, 10, 10, 9},
+                                                  {17, 10,  9, 9},
+                                                  {13,  9,  9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({2,0,2});
+        IndexArrayType arrayJ({3,0,1,0});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, Plus<double>(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{9,13, 9, 0},
+                                                  {9,17, 0, 0},
+                                                  {9, 0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({2,0,2});
+        IndexArrayType arrayJ({3,0,1,0});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, mask3x4, Plus<double>(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{9,13, 9, 9},
+                                                  {9,17, 9, 9},
+                                                  {9, 9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 }
 
-
 //****************************************************************************
-
-BOOST_AUTO_TEST_CASE(sparse_extract_column)
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_noscmp_accum_trans)
 {
-    std::vector<std::vector<double>> matA = {{8, 1, 6},
-                                             {3, 5, 7},
-                                             {4, 9, 2}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> mA(matA, 0);
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double> A(matA, 0);
+    std::vector<std::vector<uint8_t>> matMask3x2 = {{1, 1},    // stored 0
+                                                    {1,99},    // stored 0
+                                                    {0, 0}};
+    std::vector<std::vector<uint8_t>> matMask4x3 = {{1, 1, 1}, // stored 0
+                                                    {1, 1,99}, // stored 0
+                                                    {1,99,99},
+                                                    {0, 0, 0}};
+    Matrix<uint8_t> mask3x2(matMask3x2, 99); // turn 99's into implicit 0's
+    Matrix<uint8_t> mask4x3(matMask4x3, 99);
 
-    std::vector<double> vecAnswer = {1,9};
-    GraphBLAS::Vector<double> answer(vecAnswer, 0);
+    std::vector<std::vector<double>> matC4x3 = {{9, 9, 9},
+                                                {9, 9, 9},
+                                                {9, 9, 9},
+                                                {9, 9, 0}};
+    std::vector<std::vector<double>> matC3x2 = {{9, 9},
+                                                {9, 9},
+                                                {9, 0}};
 
-    // Output space
-    GraphBLAS::IndexType M = 2;
+    // I,J - AllIndices
+    {
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, Plus<double>(), transpose(A),
+                AllIndices(), AllIndices(), true);
 
-    IndexArrayType vec_row_indices = {0, 2};
-    GraphBLAS::IndexArrayType row_indices(vec_row_indices);
+        std::vector<std::vector<double>> ansMat = {{17,  9, 13},
+                                                   {10, 14,  0},
+                                                   {15,  0,  0},
+                                                   { 0,  0,  0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, Plus<double>(), transpose(A),
+                AllIndices(), AllIndices(), false);
 
-    GraphBLAS::Vector<double> result(M);
+        std::vector<std::vector<double>> ansMat = {{17,  9, 13},
+                                                   {10, 14,  9},
+                                                   {15,  9,  9},
+                                                   { 9,  9,  0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 
-    GraphBLAS::extract(result,
-                       GraphBLAS::NoMask(),
-                       GraphBLAS::NoAccumulate(),
-                       mA,
-                       row_indices,
-                       (GraphBLAS::IndexType)1);
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,1,3});
+        IndexArrayType arrayJ({0,2});
 
-    BOOST_CHECK_EQUAL(result, answer);
+        Matrix<double> C(matC3x2, 0);
+        extract(C, mask3x2, Plus<double>(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{17, 13},
+                                                  {10,  0},
+                                                  { 0,  0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,1,3});
+        IndexArrayType arrayJ({0,2});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, mask3x2, Plus<double>(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{17, 13},
+                                                  {10,  9},
+                                                  { 9,  0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1});
+        IndexArrayType arrayJ({2,0});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, mask3x2, Plus<double>(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{ 9, 9},
+                                                  {13, 0},
+                                                  { 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({3,0,1});
+        IndexArrayType arrayJ({2,0});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, mask3x2, Plus<double>(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{ 9, 9},
+                                                  {13, 9},
+                                                  { 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,1,1,3});
+        IndexArrayType arrayJ({0,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, Plus<double>(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{17, 17, 13},
+                                                  {10, 10,  0},
+                                                  {10,  0,  0},
+                                                  { 0,  0,  0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,1,1,3});
+        IndexArrayType arrayJ({0,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, Plus<double>(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{17, 17, 13},
+                                                  {10, 10,  9},
+                                                  {10,  9,  9},
+                                                  { 9,  9,  0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1,0});
+        IndexArrayType arrayJ({2,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, Plus<double>(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{ 9,  9, 9},
+                                                  {13, 17, 0},
+                                                  { 9,  0, 0},
+                                                  { 0,  0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({3,0,1,0});
+        IndexArrayType arrayJ({2,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, mask4x3, Plus<double>(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{ 9,  9, 9},
+                                                  {13, 17, 9},
+                                                  { 9,  9, 9},
+                                                  { 9,  9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 }
 
 //****************************************************************************
-
-BOOST_AUTO_TEST_CASE(sparse_extract_column_all)
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_scmp_noaccum_notrans)
 {
-    std::vector<std::vector<double>> matA = {{8, 1, 6},
-                                             {3, 5, 7},
-                                             {4, 9, 2}};
-    GraphBLAS::Matrix<double, GraphBLAS::DirectedMatrixTag> mA(matA, 0);
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double> A(matA, 0);
 
-    std::vector<double> vecAnswer = {1,5,9};
-    GraphBLAS::Vector<double> answer(vecAnswer, 0);
+    // complements of masks from the noscmp case
+    std::vector<std::vector<uint8_t>> matMask2x3 = {{0,99, 1},    // stored 0
+                                                    {0, 1, 1}};
+    std::vector<std::vector<uint8_t>> matMask3x4 = {{0,99,99, 1}, // stored 0
+                                                    {0,99, 1, 1},
+                                                    {0, 1, 1, 1}};
+    Matrix<uint8_t> mask2x3(matMask2x3, 99); // turn 99's into implicit 0's
+    Matrix<uint8_t> mask3x4(matMask3x4, 99);
 
-    GraphBLAS::Vector<double> result(3);
+    std::vector<std::vector<double>> matC3x4 = {{9, 9, 9, 9},
+                                                {9, 9, 9, 9},
+                                                {9, 9, 9, 0}};
+    std::vector<std::vector<double>> matC2x3 = {{9, 9, 9},
+                                                {9, 9, 0}};
 
-    GraphBLAS::extract(result,
-                       GraphBLAS::NoMask(),
-                       GraphBLAS::NoAccumulate(),
-                       mA,
-                       GraphBLAS::AllIndices(),
-                       1,
-                       false);
+    // I,J - AllIndices
+    {
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), NoAccumulate(), A, AllIndices(), AllIndices(), true);
 
-    BOOST_CHECK_EQUAL(result, answer);
+        std::vector<std::vector<double>> ansMat = {{8, 1, 6, 0},
+                                                   {0, 5, 0, 0},
+                                                   {4, 0, 0, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), NoAccumulate(), A, AllIndices(), AllIndices(), false);
+
+        std::vector<std::vector<double>> ansMat = {{8, 1, 6, 9},
+                                                   {0, 5, 9, 9},
+                                                   {4, 9, 9, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,2});
+        IndexArrayType arrayJ({0,1,3});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, complement(mask2x3), NoAccumulate(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{8, 1, 0},
+                                                  {4, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,2});
+        IndexArrayType arrayJ({0,1,3});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, complement(mask2x3), NoAccumulate(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{8, 1, 9},
+                                                  {4, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({2,0});
+        IndexArrayType arrayJ({3,0,1});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, complement(mask2x3), NoAccumulate(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{0, 4, 0},
+                                                  {0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({2,0});
+        IndexArrayType arrayJ({3,0,1});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, complement(mask2x3), NoAccumulate(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{0, 4, 9},
+                                                  {0, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,0,2});
+        IndexArrayType arrayJ({0,1,1,3});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), NoAccumulate(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{8, 1, 1, 0},
+                                                  {8, 1, 0, 0},
+                                                  {4, 0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,0,2});
+        IndexArrayType arrayJ({0,1,1,3});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), NoAccumulate(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{8, 1, 1, 9},
+                                                  {8, 1, 9, 9},
+                                                  {4, 9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({2,0,2});
+        IndexArrayType arrayJ({3,0,1,0});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), NoAccumulate(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{0, 4, 0, 0},
+                                                  {0, 8, 0, 0},
+                                                  {0, 0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({2,0,2});
+        IndexArrayType arrayJ({3,0,1,0});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), NoAccumulate(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{0, 4, 0, 9},
+                                                  {0, 8, 9, 9},
+                                                  {0, 9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+}
+
+//****************************************************************************
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_scmp_noaccum_trans)
+{
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double> A(matA, 0);
+    std::vector<std::vector<uint8_t>> matMask3x2 = {{ 0, 0},    // stored 0
+                                                    {99, 1},    // stored 0
+                                                    { 1, 1}};
+    std::vector<std::vector<uint8_t>> matMask4x3 = {{ 0, 0, 0}, // stored 0
+                                                    {99,99, 1}, // stored 0
+                                                    {99, 1, 1},
+                                                    { 1, 1, 1}};
+    Matrix<uint8_t> mask3x2(matMask3x2, 99); // turn 99's into implicit 0's
+    Matrix<uint8_t> mask4x3(matMask4x3, 99);
+
+    std::vector<std::vector<double>> matC4x3 = {{9, 9, 9},
+                                                {9, 9, 9},
+                                                {9, 9, 9},
+                                                {9, 9, 0}};
+    std::vector<std::vector<double>> matC3x2 = {{9, 9},
+                                                {9, 9},
+                                                {9, 0}};
+
+    // I,J - AllIndices
+    {
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), NoAccumulate(), transpose(A),
+                AllIndices(), AllIndices(), true);
+
+        std::vector<std::vector<double>> ansMat = {{8, 0, 4},
+                                                   {1, 5, 0},
+                                                   {6, 0, 0},
+                                                   {0, 0, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), NoAccumulate(), transpose(A),
+                AllIndices(), AllIndices(), false);
+
+        std::vector<std::vector<double>> ansMat = {{8, 0, 4},
+                                                   {1, 5, 9},
+                                                   {6, 9, 9},
+                                                   {9, 9, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,1,3});
+        IndexArrayType arrayJ({0,2});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, complement(mask3x2), NoAccumulate(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{8, 4},
+                                                  {1, 0},
+                                                  {0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,1,3});
+        IndexArrayType arrayJ({0,2});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, complement(mask3x2), NoAccumulate(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{8, 4},
+                                                  {1, 9},
+                                                  {9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1});
+        IndexArrayType arrayJ({2,0});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, complement(mask3x2), NoAccumulate(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{0, 0},
+                                                  {4, 0},
+                                                  {0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({3,0,1});
+        IndexArrayType arrayJ({2,0});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, complement(mask3x2), NoAccumulate(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{0, 0},
+                                                  {4, 9},
+                                                  {9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,1,1,3});
+        IndexArrayType arrayJ({0,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), NoAccumulate(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{8, 8, 4},
+                                                  {1, 1, 0},
+                                                  {1, 0, 0},
+                                                  {0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,1,1,3});
+        IndexArrayType arrayJ({0,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), NoAccumulate(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{8, 8, 4},
+                                                  {1, 1, 9},
+                                                  {1, 9, 9},
+                                                  {9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1,0});
+        IndexArrayType arrayJ({2,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), NoAccumulate(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{0, 0, 0},
+                                                  {4, 8, 0},
+                                                  {0, 0, 0},
+                                                  {0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({3,0,1,0});
+        IndexArrayType arrayJ({2,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), NoAccumulate(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{0, 0, 0},
+                                                  {4, 8, 9},
+                                                  {0, 9, 9},
+                                                  {9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+}
+
+//****************************************************************************
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_scmp_accum_notrans)
+{
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double> A(matA, 0);
+
+    std::vector<std::vector<uint8_t>> matMask2x3 = {{0,99, 1},    // stored 0
+                                                    {0, 1, 1}};
+    std::vector<std::vector<uint8_t>> matMask3x4 = {{0,99,99, 1}, // stored 0
+                                                    {0,99, 1, 1},
+                                                    {0, 1, 1, 1}};
+    Matrix<uint8_t> mask2x3(matMask2x3, 99); // turn 99's into implicit 0's
+    Matrix<uint8_t> mask3x4(matMask3x4, 99);
+
+    std::vector<std::vector<double>> matC3x4 = {{9, 9, 9, 9},
+                                                {9, 9, 9, 9},
+                                                {9, 9, 9, 0}};
+    std::vector<std::vector<double>> matC2x3 = {{9, 9, 9},
+                                                {9, 9, 0}};
+
+    // I,J - AllIndices
+    {
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), Plus<double>(), A, AllIndices(), AllIndices(), true);
+
+        std::vector<std::vector<double>> ansMat = {{17, 10, 15, 0},
+                                                   { 9, 14,  0, 0},
+                                                   {13,  0,  0, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), Plus<double>(), A, AllIndices(), AllIndices(), false);
+
+        std::vector<std::vector<double>> ansMat = {{17, 10, 15, 9},
+                                                   { 9, 14,  9, 9},
+                                                   {13,  9,  9, 0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,2});
+        IndexArrayType arrayJ({0,1,3});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, complement(mask2x3), Plus<double>(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{17, 10, 0},
+                                                  {13,  0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,2});
+        IndexArrayType arrayJ({0,1,3});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, complement(mask2x3), Plus<double>(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{17, 10, 9},
+                                                  {13,  9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({2,0});
+        IndexArrayType arrayJ({3,0,1});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, complement(mask2x3), Plus<double>(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{9,13, 0},
+                                                  {9, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({2,0});
+        IndexArrayType arrayJ({3,0,1});
+
+        Matrix<double> C(matC2x3, 0);
+        extract(C, complement(mask2x3), Plus<double>(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{9,13, 9},
+                                                  {9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,0,2});
+        IndexArrayType arrayJ({0,1,1,3});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), Plus<double>(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{17, 10, 10, 0},
+                                                  {17, 10,  0, 0},
+                                                  {13,  0,  0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,0,2});
+        IndexArrayType arrayJ({0,1,1,3});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), Plus<double>(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{17, 10, 10, 9},
+                                                  {17, 10,  9, 9},
+                                                  {13,  9,  9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({2,0,2});
+        IndexArrayType arrayJ({3,0,1,0});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), Plus<double>(), A, arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{9,13, 9, 0},
+                                                  {9,17, 0, 0},
+                                                  {9, 0, 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({2,0,2});
+        IndexArrayType arrayJ({3,0,1,0});
+
+        Matrix<double> C(matC3x4, 0);
+        extract(C, complement(mask3x4), Plus<double>(), A, arrayI, arrayJ, false);
+
+        std::vector<std::vector<double>> ansMat ={{9,13, 9, 9},
+                                                  {9,17, 9, 9},
+                                                  {9, 9, 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+}
+
+//****************************************************************************
+BOOST_AUTO_TEST_CASE(extract_stdmat_test_scmp_accum_trans)
+{
+    std::vector<std::vector<double>> matA = {{8, 1, 6, 0},
+                                             {0, 5, 7, 9},
+                                             {4, 0, 2, 0}};
+    Matrix<double> A(matA, 0);
+    std::vector<std::vector<uint8_t>> matMask3x2 = {{ 0, 0},    // stored 0
+                                                    {99, 1},    // stored 0
+                                                    { 1, 1}};
+    std::vector<std::vector<uint8_t>> matMask4x3 = {{ 0, 0, 0}, // stored 0
+                                                    {99,99, 1}, // stored 0
+                                                    {99, 1, 1},
+                                                    { 1, 1, 1}};
+    Matrix<uint8_t> mask3x2(matMask3x2, 99); // turn 99's into implicit 0's
+    Matrix<uint8_t> mask4x3(matMask4x3, 99);
+
+    std::vector<std::vector<double>> matC4x3 = {{9, 9, 9},
+                                                {9, 9, 9},
+                                                {9, 9, 9},
+                                                {9, 9, 0}};
+    std::vector<std::vector<double>> matC3x2 = {{9, 9},
+                                                {9, 9},
+                                                {9, 0}};
+
+    // I,J - AllIndices
+    {
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), Plus<double>(), transpose(A),
+                AllIndices(), AllIndices(), true);
+
+        std::vector<std::vector<double>> ansMat = {{17,  9, 13},
+                                                   {10, 14,  0},
+                                                   {15,  0,  0},
+                                                   { 0,  0,  0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), Plus<double>(), transpose(A),
+                AllIndices(), AllIndices(), false);
+
+        std::vector<std::vector<double>> ansMat = {{17,  9, 13},
+                                                   {10, 14,  9},
+                                                   {15,  9,  9},
+                                                   { 9,  9,  0}};
+        Matrix<double> answer(ansMat, 0);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, ordered
+    {
+        IndexArrayType arrayI({0,1,3});
+        IndexArrayType arrayJ({0,2});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, complement(mask3x2), Plus<double>(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{17, 13},
+                                                  {10,  0},
+                                                  { 0,  0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,1,3});
+        IndexArrayType arrayJ({0,2});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, complement(mask3x2), Plus<double>(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{17, 13},
+                                                  {10,  9},
+                                                  { 9,  0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - no dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1});
+        IndexArrayType arrayJ({2,0});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, complement(mask3x2), Plus<double>(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{ 9, 9},
+                                                  {13, 0},
+                                                  { 0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({3,0,1});
+        IndexArrayType arrayJ({2,0});
+
+        Matrix<double> C(matC3x2, 0);
+        extract(C, complement(mask3x2), Plus<double>(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{ 9, 9},
+                                                  {13, 9},
+                                                  { 9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, ordered
+    {
+        IndexArrayType arrayI({0,1,1,3});
+        IndexArrayType arrayJ({0,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), Plus<double>(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{17, 17, 13},
+                                                  {10, 10,  0},
+                                                  {10,  0,  0},
+                                                  { 0,  0,  0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({0,1,1,3});
+        IndexArrayType arrayJ({0,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), Plus<double>(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{17, 17, 13},
+                                                  {10, 10,  9},
+                                                  {10,  9,  9},
+                                                  { 9,  9,  0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+
+    // I,J - dup, permuted
+    {
+        IndexArrayType arrayI({3,0,1,0});
+        IndexArrayType arrayJ({2,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), Plus<double>(), transpose(A), arrayI, arrayJ, true);
+
+        std::vector<std::vector<double>> ansMat ={{ 9,  9, 9},
+                                                  {13, 17, 0},
+                                                  { 9,  0, 0},
+                                                  { 0,  0, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
+    {
+        IndexArrayType arrayI({3,0,1,0});
+        IndexArrayType arrayJ({2,0,2});
+
+        Matrix<double> C(matC4x3, 0);
+        extract(C, complement(mask4x3), Plus<double>(), transpose(A), arrayI, arrayJ,false);
+
+        std::vector<std::vector<double>> ansMat ={{ 9,  9, 9},
+                                                  {13, 17, 9},
+                                                  { 9,  9, 9},
+                                                  { 9,  9, 0}};
+        Matrix<double> answer(ansMat, 0.);
+        BOOST_CHECK_EQUAL(C, answer);
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

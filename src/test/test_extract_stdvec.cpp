@@ -170,6 +170,24 @@ BOOST_AUTO_TEST_CASE(extract_stdvec_test_allindices_too_small)
 
         BOOST_CHECK_EQUAL(result, answer);
     }
+
+    // result is too large when I = AllIndices should also pass
+    {
+        std::vector<double> vecAnswer = {4, 0, 2, 0, 0, 0};
+        Vector<double> answer(vecAnswer, 0);
+
+        // Output rank
+        IndexType M = 6;
+        Vector<double> result(M);
+
+        extract(result,
+                NoMask(),
+                NoAccumulate(),
+                vU,
+                AllIndices());
+
+        BOOST_CHECK_EQUAL(result, answer);
+    }
 }
 
 
@@ -188,7 +206,7 @@ BOOST_AUTO_TEST_CASE(extract_stdvec_test_allindices_too_small)
 //****************************************************************************
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(extract_stdvec_test_nomask_noaccum_notrans)
+BOOST_AUTO_TEST_CASE(extract_stdvec_test_nomask_noaccum)
 {
     std::vector<double> vecU = {4, 0, 2, 0};
     Vector<double> vU(vecU, 0);
@@ -278,7 +296,7 @@ BOOST_AUTO_TEST_CASE(extract_stdvec_test_nomask_noaccum_notrans)
 }
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(extract_stdvec_test_nomask_accum_notrans)
+BOOST_AUTO_TEST_CASE(extract_stdvec_test_nomask_accum)
 {
     std::vector<double> vecU = {4, 0, 2, 0};
     Vector<double> vU(vecU);
@@ -363,7 +381,7 @@ BOOST_AUTO_TEST_CASE(extract_stdvec_test_nomask_accum_notrans)
 }
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(extract_stdvec_test_noscmp_noaccum_notrans)
+BOOST_AUTO_TEST_CASE(extract_stdvec_test_noscmp_noaccum)
 {
     std::vector<double> vecU = {4, 0, 2, 0};
     Vector<double> vU(vecU, 0);
@@ -523,7 +541,7 @@ BOOST_AUTO_TEST_CASE(extract_stdvec_test_noscmp_noaccum_notrans)
 }
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(extract_stdvec_test_noscmp_accum_notrans)
+BOOST_AUTO_TEST_CASE(extract_stdvec_test_noscmp_accum)
 {
     std::vector<double> vecU = {4, 0, 2, 0};
     Vector<double> vU(vecU, 0);
@@ -681,7 +699,7 @@ BOOST_AUTO_TEST_CASE(extract_stdvec_test_noscmp_accum_notrans)
 }
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(extract_stdvec_test_scmp_noaccum_notrans)
+BOOST_AUTO_TEST_CASE(extract_stdvec_test_scmp_noaccum)
 {
     std::vector<double> vecU = {4, 0, 2, 0};
     Vector<double> vU(vecU, 0);
@@ -828,7 +846,7 @@ BOOST_AUTO_TEST_CASE(extract_stdvec_test_scmp_noaccum_notrans)
 }
 
 //****************************************************************************
-BOOST_AUTO_TEST_CASE(extract_stdvec_test_scmp_accum_notrans)
+BOOST_AUTO_TEST_CASE(extract_stdvec_test_scmp_accum)
 {
     std::vector<double> vecU = {4, 0, 2, 0};
     Vector<double> vU(vecU, 0);
