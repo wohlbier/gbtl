@@ -618,7 +618,7 @@ BOOST_AUTO_TEST_CASE(test_ewiseadd_matrix_masked_bad_dimensions)
                              Mask,
                              GraphBLAS::NoAccumulate(),
                              GraphBLAS::Plus<double>(), mA, mB)),
-        GraphBLAS::DimensionException)
+        GraphBLAS::DimensionException);
         }
 
 //****************************************************************************
@@ -1042,7 +1042,7 @@ BOOST_AUTO_TEST_CASE(test_ewiseadd_matrix_scmp_masked_bad_dimensions)
                              GraphBLAS::complement(Mask),
                              GraphBLAS::NoAccumulate(),
                              GraphBLAS::Plus<double>(), mA, mB)),
-        GraphBLAS::DimensionException)
+        GraphBLAS::DimensionException);
         }
 
 //****************************************************************************

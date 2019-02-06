@@ -473,14 +473,16 @@ namespace algorithms
 
         GraphBLAS::IndexType rows(graph.nrows());
         GraphBLAS::IndexType cols(graph.ncols());
-        if (rows != cols)
-        {
-            //throw GraphBLAS::DimensionException();
-            return;
-        }
 
         // A = (RealT)graph
         RealMatrixT Anorm(rows, cols);
+        if (rows != cols)
+        {
+          //throw GraphBLAS::DimensionException();
+          std::cerr << "markov_cluster DimensionException" << std::endl;
+          return Anorm; //jgw//
+        }
+
         GraphBLAS::apply(Anorm,
                          GraphBLAS::NoMask(), GraphBLAS::NoAccumulate(),
                          GraphBLAS::Identity<RealT>(),

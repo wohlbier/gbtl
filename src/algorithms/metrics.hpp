@@ -173,7 +173,7 @@ namespace algorithms
             (result.ncols() != cols))
         {
             //throw GraphBLAS::DimensionException();
-            return 0;
+            return;
         }
 
         result.clear();
