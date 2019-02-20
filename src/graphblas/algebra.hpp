@@ -30,7 +30,7 @@
 #ifndef GB_ALGEBRA_HPP
 #define GB_ALGEBRA_HPP
 
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 #include <functional>
 #include <limits>

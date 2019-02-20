@@ -50,6 +50,11 @@ else()
     message(FATAL_ERROR "Specified platform directory does not exist.")
 endif()
 
+# some exes need suffixes
+if (PLATFORM STREQUAL emu)
+  set (EXE_SUFFIX ".mwx")
+endif ()
+
 message("Configured platform: ${PLATFORM}")
 
 # https://stackoverflow.com/questions/14306642/adding-multiple-executables-in-cmake
@@ -68,28 +73,36 @@ file(GLOB GRAPHBLAS_HEADERS graphblas/*.hpp)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 ### Make basic tests
-file( GLOB TEST_SOURCES LIST_DIRECTORIES false ${CMAKE_SOURCE_DIR}/test/*.cpp )
+if (PLATFORM STREQUAL sequential)
+  file( GLOB TEST_SOURCES LIST_DIRECTORIES false ${CMAKE_SOURCE_DIR}/test/*.cpp )
+endif ()
 foreach( testsourcefile ${TEST_SOURCES} )
-    get_filename_component(justname ${testsourcefile} NAME)
-    string( REPLACE ".cpp" "" testname ${justname} )
-    message("Adding: ${testname}")
-    add_executable( ${testname} ${testsourcefile} ${GRAPHBLAS_HEADERS})
+  get_filename_component(justname ${testsourcefile} NAME)
+  string( REPLACE ".cpp" "${EXE_SUFFIX}" testname ${justname} )
+  message("Adding: ${testname}")
+  add_executable( ${testname} ${testsourcefile} ${GRAPHBLAS_HEADERS})
 endforeach( testsourcefile ${TEST_SOURCES} )
 
 ### Make extra PLATFORM-specific tests
 file( GLOB TEST_SOURCES LIST_DIRECTORIES false ${PLATFORM_SOURCE_DIR}/test/*.cpp )
 foreach( testsourcefile ${TEST_SOURCES} )
-    get_filename_component(justname ${testsourcefile} NAME)
-    string( REPLACE ".cpp" "" testname ${justname} )
-    message("Adding: ${testname}_${PLATFORM} ")
-    add_executable( ${testname}_${PLATFORM} ${testsourcefile} ${GRAPHBLAS_HEADERS})
+  get_filename_component(justname ${testsourcefile} NAME)
+  string( REPLACE ".cpp" "${EXE_SUFFIX}" testname ${justname} )
+  message("Adding: ${testname}_${PLATFORM} ")
+  add_executable( ${testname}_${PLATFORM} ${testsourcefile} ${GRAPHBLAS_HEADERS})
 endforeach( testsourcefile ${TEST_SOURCES} )
 
 ## Make demos
-file( GLOB TEST_SOURCES LIST_DIRECTORIES false ${CMAKE_SOURCE_DIR}/demo/*.cpp )
+if (PLATFORM STREQUAL emu)
+  set (TEST_SOURCES ${CMAKE_SOURCE_DIR}/demo/triangle_count_demo.cpp)
+else ()
+  file( GLOB TEST_SOURCES LIST_DIRECTORIES false ${CMAKE_SOURCE_DIR}/demo/*.cpp )
+endif ()
+
 foreach( testsourcefile ${TEST_SOURCES} )
-    get_filename_component(justname ${testsourcefile} NAME)
-    string( REPLACE ".cpp" "" testname ${justname} )
-    message("Adding: ${testname}")
-    add_executable( ${testname} ${testsourcefile} ${GRAPHBLAS_HEADERS})
+  get_filename_component(justname ${testsourcefile} NAME)
+  string( REPLACE ".cpp" "${EXE_SUFFIX}" testname ${justname} )
+  message("Adding: ${testname}")
+  add_executable( ${testname} ${testsourcefile} ${GRAPHBLAS_HEADERS})
 endforeach( testsourcefile ${TEST_SOURCES} )
+
